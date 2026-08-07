@@ -6,7 +6,7 @@
 
 ## 0. How to read this document
 
-This is the **master document**. It contains the full Product Requirements Document (PRD) and the architectural overview — enough to understand *what* we are building and *why*. The detailed engineering sections live in companion documents and are linked from the **Index** at the very bottom using `@relative/file/path.md` syntax. A build tool may concatenate the master plus every linked file, in index order, to produce one omnibus specification.
+This is the **master document**. It contains the full Product Requirements Document (PRD) and the architectural overview — enough to understand *what* we are building and *why*. The detailed engineering sections live in companion documents and are linked from the **Index** at the bottom of this document. A build tool may concatenate the master plus every linked file, in index order, to produce one omnibus specification.
 
 This spec is written so that a **naive dev agent can one-shot the implementation**. That means it does not assume prior knowledge of Pi internals: the prerequisite knowledge is included (see `@01-pi-context-internals.md`), the dead-ends discovered during the feasibility spike are called out so they are not repeated (see `@02-proven-constraints.md`), and the build order is prescribed step-by-step (see `@11-build-order.md`).
 
