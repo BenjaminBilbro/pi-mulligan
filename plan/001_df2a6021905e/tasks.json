@@ -1,0 +1,516 @@
+{
+  "backlog": [
+    {
+      "id": "P1",
+      "type": "Phase",
+      "title": "pi-mulligan v1.0 — Autonomous Agent Context Control",
+      "status": "Researching",
+      "description": "Ship the complete pi-mulligan Pi extension as specified: one mechanism (persisted markers driving a context-event view transform), four agent-callable tools (rewind, shrink, checkpoint, audit), and two zero-extra-request nudges (bloated-result reminder + per-turn drift). The agent gains autonomous, token-cheap control over its own context window. Feasibility is pre-proven (spec/02 spike) and a complete reference implementation exists in the sibling main worktree as a read-only oracle (see architecture/system_context.md §3). v1 is a single cohesive MVP; build order mirrors spec/11.",
+      "milestones": [
+        {
+          "id": "P1.M1",
+          "type": "Milestone",
+          "title": "Project Foundation & Infrastructure",
+          "status": "Planned",
+          "description": "Establish a runnable no-op extension, the configuration system, the structured logger, and the per-session runtime map. Everything downstream depends on this. Verifies greenfield scaffold loads in `pi -e ./src/index.ts` without error.",
+          "tasks": [
+            {
+              "id": "P1.M1.T1",
+              "type": "Task",
+              "title": "Repository scaffold & type setup",
+              "status": "Complete",
+              "description": "Create package.json, tsconfig.json, the spec/11 §1 directory skeleton (src/ + src/tools/ + test/ + test/integration/), and a no-op index.ts factory so `pi -e ./src/index.ts -p \"hi\"` loads and a session_start log line prints without error.",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T1.S1",
+                  "type": "Subtask",
+                  "title": "Scaffold package.json, tsconfig.json, dir tree, and no-op index.ts",
+                  "status": "Complete",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Create the exact layout in spec/11 §1 (src/{index,config,log,runtime,markers,filter,transforms,ledger,tokens,notes,nudges}.ts + src/tools/{rewind,shrink,checkpoint,audit}.ts + test/ + test/integration/). package.json per spec/11 §1.1 (`type:\"module\"`, `main:\"src/index.ts\"`, deps `@earendil-works/pi-coding-agent` + `typebox`, devDeps `typescript ^5` + `vitest ^1`, scripts `test` + `smoke`). tsconfig per spec/11 §1.2 (ES2022/ESNext/Bundler, strict, noImplicitAny, types:[\"node\"], skipLibCheck). The extension is jiti-transpiled on the fly by Pi — NO build step at runtime; node_modules is only for editor IntelliSense. A reference of the target layout exists read-only at /home/dustin/projects/pi-mulligan/src (sibling main worktree) — consult for shape, but the spec is the canonical contract.\n2. INPUT: spec/SPEC.md + spec/11-build-order.md (layout), architecture/system_context.md (Pi 0.84.1 surfaces), architecture/external_deps.md §1–2 (deps). Consult node_modules/.d.ts from sibling /home/dustin/projects/pi-mulligan/node_modules for exact type resolution.\n3. LOGIC: index.ts exports `export default function (pi: ExtensionAPI) {}` importing `type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"`. Create all src/*.ts and src/tools/*.ts as empty stubs (empty function bodies / `export {}`) so the tree exists. DO NOT register anything yet.\n4. OUTPUT: a loadable no-op extension. Verification gate: `pi -e ./src/index.ts -p \"hi\"` exits 0 with no load/transpile error. (smoke harness wiring comes in P1.M5.T3.)\n5. MOCKING: none (Pi provides ExtensionAPI at runtime).\n6. IMPLICIT TDD: assert `pi -e ./src/index.ts -p hi` loads (a test/integration/load.test.ts or scenarios.md step).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M1.T2",
+              "type": "Task",
+              "title": "Configuration system (config.ts)",
+              "status": "Complete",
+              "description": "Implement getConfig(): read the `mulligan` object from Pi settings, validate+coerce+default every field per spec/09, never throw. This gates every feature (master `enabled` switch, per-feature toggles, thresholds, protected roles, maxDepth).",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T2.S1",
+                  "type": "Subtask",
+                  "title": "MulliganConfig schema, defaults, load/validate/coerce",
+                  "status": "Complete",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Config source = Pi merged settings `mulligan` object (project-local overrides global). Loaded lazily, cached for the session, re-read on /reload. Validation rules: spec/09 §4 — booleans coerce via !!; numbers must be finite >=0 (thresholds >0); protectedRoles must be array of known selectors (`\"first:user\"`,`\"latest:user\"`), unknown ignored w/ warn; estimateConfidence one of low|medium|high; log.file a string (open deferred). ON ANY per-field failure: warn-log the field+value, use the default, continue. NEVER throw. Unknown keys ignored (forward-compat).\n2. INPUT: the Pi settings accessor (whatever `pi` exposes; if none in ctx, read via the documented settings path or accept a settings object param). spec/09 §2 default values.\n3. LOGIC: Export `interface MulliganConfig` (spec/04 §7 / spec/09 §2 — top-level `enabled`; `rewind.{enabled,protectedRoles,maxDepth,requireMutationWarning}`; `shrink.{enabled}`; `nudges.{bloatReminder,perTurnDrift,bloatThresholdBytes,driftThresholdTokens}`; `audit.{estimateConfidence}`; `log.{file}`). Export `const DEFAULT_CONFIG` and `export function getConfig(): MulliganConfig` (cached) + `export function validateConfig(raw: unknown): MulliganConfig` (pure, unit-testable). Defaults: enabled true; rewind.{true,[\"first:user\",\"latest:user\"],5,true}; shrink.true; nudges.{true,true,8192,3000}; audit.\"medium\"; log.null.\n4. OUTPUT: `getConfig()`/`validateConfig()` for consumption by filter.ts (P1.M3.T2), every tool (P1.M4), and nudges.ts (P1.M3.T3). A disable via `config.enabled=false` MUST make the whole extension a no-op (E14).\n5. MOCKING: unit tests feed partial/invalid objects directly to validateConfig; no Pi needed.\n6. IMPLICIT TDD: test/config.test.ts covers: defaults applied; bad values fall back to default without throwing; unknown keys ignored; thresholds clamped; protectedRoles filtered.\n7. DOCS: the config knob table is per-file reference → update inline in code JSDoc referencing spec/09 (Mode A). (Whole-feature config docs ride the README in P1.M5.T4.)",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M1.T3",
+              "type": "Task",
+              "title": "Structured logger (log.ts)",
+              "status": "Complete",
+              "description": "Implement the JSONL append-only logger (spec/04 §9) used as the primary observability surface in non-TUI modes and the assertion target of the test suite (spec/10).",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T3.S1",
+                  "type": "Subtask",
+                  "title": "JSONL logger with deferred open + path safety",
+                  "status": "Complete",
+                  "story_points": 0.5,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/04 §9 LogLine shape `{ts:ISO, level:\"debug\"|\"info\"|\"warn\"|\"error\", event:string, sessionId:string, data?:unknown}`. Logger is OFF by default (log.file=null); opening is deferred to first write and wrapped so a bad path never crashes the extension (spec/09 §4). Use node:fs appendFileSync; swallow+console.error on write failure (Mulligan must never crash the agent loop — fail-open principle).\n2. INPUT: config.log.file from P1.M1.T2 (read lazily, since getConfig is created concurrently — accept the path as a module-level setter or read getConfig() at call time; keep ordering flexible: log.ts may import config.ts, OR config passes file into a log init in index.ts). Choose the import that avoids a cycle (config.ts should NOT import log.ts).\n3. LOGIC: Export `export function log(level, event, ctx, data?)` where ctx provides sessionId (or pass sessionId string directly for the pure case). Level filter (debug suppressed unless configured). Each call appends one JSON line. Provide a `setLogFile(path|null)` init hook called from index.ts.\n4. OUTPUT: `log(...)` consumed by filter.ts, tools/*, nudges.ts, markers.ts for every significant event (rewind.applied, filter.fire, nudge.inject, shrink.recorded, error).\n5. MOCKING: unit tests point log.file at a temp file and assert JSONL lines.\n6. IMPLICIT TDD: test/log.test.ts — lines are valid JSON; off when file=null; bad path does not throw.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M1.T4",
+              "type": "Task",
+              "title": "Per-session runtime map (runtime.ts)",
+              "status": "Planned",
+              "description": "Implement the in-memory (non-persisted) per-session state: monotonic seq counter, token baseline, last turn index, and the cached lastFiltered view for audit. Held in a Map keyed by sessionId; created/reset on session_start.",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T4.S1",
+                  "type": "Subtask",
+                  "title": "SessionRuntime map + seq counter + baseline + lastFiltered cache",
+                  "status": "Planned",
+                  "story_points": 0.5,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/04 §8 SessionRuntime = `{sessionId, seq, tokenBaseline:number|null, lastTurnIndex:number|null, lastFiltered:AgentMessage[]|null, lastFilterTs:number|null}`. Held in `Map<string, SessionRuntime>` keyed by `ctx.sessionManager.getSessionId()`. Reset/created on session_start (E11: reload loses caches → session_start reinitializes; markers/notes are persisted entries so correctness is unaffected). NEVER cache a sessionManager handle across turns (spec/02 C12) — only primitive values + the lastFiltered snapshot.\n2. INPUT: a ctx-shaped object providing getSessionId() (for unit tests, accept a string key).\n3. LOGIC: Export `export function runtime(ctx|sessionId): SessionRuntime` (get-or-create). Export `export function nextSeq(rt): number` (monotonic; used by markers.ts). seq is stamped INTO each persisted marker (spec/04 §3) so the filter can order markers deterministically across reload. tokenBaseline rolls forward at each turn_end (consumed by nudges.ts P1.M3.T3). lastFiltered is written by filter.ts (P1.M3.T2) and read by mulligan_audit (P1.M4.T4).\n4. OUTPUT: `runtime(ctx)` + `nextSeq(rt)` for markers.ts (P1.M3.T1), filter.ts, nudges.ts, tools/audit.ts.\n5. MOCKING: unit tests pass synthetic session ids; assert get-or-create + seq monotonicity.\n6. IMPLICIT TDD: test/runtime.test.ts — get-or-create idempotent per session; seq strictly increasing; distinct sessions independent.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M2",
+          "type": "Milestone",
+          "title": "Pure Core Library (zero-Pi, fully unit-tested)",
+          "status": "Planned",
+          "description": "Implement the ENTIRE correctness surface as pure functions with NO Pi dependency: token estimation, file-ledger extraction, note rendering/validation, and the transform pipeline (pairing-aware partitioning, resolvers, apply ops, composition). This is where ~all correctness lives and is unit-testable without Pi/model/session. Per architecture/external_deps.md §3.1, filterPipeline handles rewinds+shrinks ONLY (nudge injection lives in filter.ts glue).",
+          "tasks": [
+            {
+              "id": "P1.M2.T1",
+              "type": "Task",
+              "title": "Token estimation helpers (tokens.ts)",
+              "status": "Planned",
+              "description": "Cheap, deterministic token/byte estimation used by the audit tool and the drift nudge. Character/structure-based (NOT a real tokenizer) with an honest confidence flag.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T1.S1",
+                  "type": "Subtask",
+                  "title": "estimateTokens, resultBytes, approxTokens",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/06 §7 + spec/10 §1.7. `estimateTokens(messages|message|text, model?)` → `{tokens:number, confidence:\"low\"|\"medium\"|\"high\"}`. Use a stable chars-per-token heuristic (~4 chars/token) summed over content-block text; account for toolCall/thinking blocks structurally. `resultBytes(content)` = sum of UTF-8 byte length of `.text` across content blocks (spec/07 §1 — used for the bloat threshold which is in BYTES not tokens, deliberately below Pi's 50KB cap). `approxTokens(bytes)` = bytes/4 for the bloat metric. Confidence defaults to config.audit.estimateConfidence; degrade to \"low\" when images/large schemas present.\n2. INPUT: AgentMessage[] or a single message or a string + optional model (model unused in v1 beyond possibly switching the ratio; keep simple).\n3. LOGIC: Pure, deterministic, no Pi import. Empty → 0. Monotonic in input length.\n4. OUTPUT: consumed by tools/audit.ts (P1.M4.T4 — per-message breakdown of the FILTERED view) and nudges.ts (P1.M3.T3 — turn delta + bloat approxTokens). NEVER use ctx.getContextUsage() for honest reporting (D5 — it counts hidden tokens).\n5. MOCKING: none.\n6. IMPLICIT TDD: test/tokens.test.ts — empty→0; monotonic; known string yields stable estimate (snapshot); resultBytes counts UTF-8; confidence flag present.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T2",
+              "type": "Task",
+              "title": "File-ledger extraction (ledger.ts)",
+              "status": "Planned",
+              "description": "Deterministically extract {readFiles, modifiedFiles, bashSideEffects} from the tool calls in a span — feeds the rewind note's true_current_state (the state-ledger that prevents redoing side-effectful work, D17). No model call.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T2.S1",
+                  "type": "Subtask",
+                  "title": "extractFileLedger (read/modified/bash-side-effects, de-dup + sort)",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/04 §2.2 + spec/10 §1.6. Input = the messages of the span being rewound (the rewind tool reads entries read-only to build this — the single read exception, spec/03 §2.1). Extraction rules: readFiles = union of `path`/`file_path` args from tool calls whose name ∈ {read,grep,rg,glob}; modifiedFiles = union of `path`/`file_path` args from tool calls whose name ∈ {write,edit} (and bash only when a write heuristic matches AND a path parses — best-effort, uncertain → bashSideEffects); bashSideEffects = bash commands NOT provably read-only (regex heuristic: matches >,rm,mv,mkdir,git,curl,etc.; when in doubt INCLUDE). De-duplicated, sorted, relative to cwd. Empty span → all lists empty.\n2. INPUT: an array of tool-call descriptors extracted from the span (each {name, arguments:Record<string,unknown>}) OR the AgentMessage[] of the span (extract toolCall blocks from assistant messages + correlate). Define the exact input shape and document it; the rewind tool (P1.M4.T1) MUST produce that shape.\n3. LOGIC: Pure, no Pi. Build the three lists via the heuristics, de-dup (case-sensitive), sort lexically.\n4. OUTPUT: FileLedger object consumed by notes.renderNote (P1.M2.T3) and stored in the rewind marker (P1.M3.T1 → spec/04 §3 ledger field). Drives the requireMutationWarning (P1.M4.T1) when modifiedFiles/bashSideEffects non-empty.\n5. MOCKING: none.\n6. IMPLICIT TDD: test/ledger.test.ts — spec/10 §1.6 example (read a.ts, edit b.ts, `git commit`, `ls` → readFiles:[a.ts], modifiedFiles:[b.ts], bashSideEffects:[git commit], ls omitted); empty span → all empty; de-dup + sort.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T3",
+              "type": "Task",
+              "title": "Note rendering & validation (notes.ts)",
+              "status": "Planned",
+              "description": "Render the structured mulligan:note (the confabulation defense — D17) from NoteInput + FileLedger, validate all four fields non-empty, and produce the nudge reminder/drift renderers.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T3.S1",
+                  "type": "Subtask",
+                  "title": "validateNote + renderNote + renderBloatReminder + renderDriftNudge",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S1",
+                    "P1.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/04 §2 (NoteInput 4 required non-empty fields: what_happened/avoid/true_current_state/next) + spec/04 §2.3 rendered template (## 🔄 Mulligan rewind; What happened/Avoid/Current true state; <files-read>/<files-modified>/<bash-side-effects> block tags mirroring Pi compaction convention; Next). Omit a ledger block when its list is empty. spec/07 §1 renderBloatReminder template (appended to a bloated result) and spec/07 §2 renderDriftNudge template (the ephemeral per-turn nudge).\n2. INPUT: NoteInput (spec/04 §2.1) + FileLedger (from P1.M2.T2) + granularity string (for the header). All pure.\n3. LOGIC: `validateNote(note): {ok:boolean, error?:string}` — refuses if ANY of the 4 fields is empty after trim (spec/05 §1 step 2; E9). `renderNote(note, ledger, granularity): string` — exact template. `renderBloatReminder(toolName, bytes, threshold): string` (spec/07 §1 block). `renderDriftNudge(metric): string` (spec/07 §2 block). Pure, no Pi.\n4. OUTPUT: validateNote + renderNote consumed by tools/rewind.ts (P1.M4.T1). renderBloatReminder consumed by nudges.ts tool_result handler (P1.M3.T3). renderDriftNudge consumed by nudges.ts injectNudge (P1.M3.T3).\n5. MOCKING: none.\n6. IMPLICIT TDD: test/notes.test.ts — spec/10 §1.8: all 4 present → renders w/ ledger blocks; empty ledger lists → blocks omitted; any empty field → validation refuses (structured error, not thrown); snapshot tests for representative notes + the two nudge templates.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T4",
+              "type": "Task",
+              "title": "Transforms — pairing & partitioning (transforms.ts core)",
+              "status": "Planned",
+              "description": "Implement the cardinal pairing primitive: partitionIntoUnits. This enforces the tool-pairing invariant (spec/06 §2) by construction — every removal operates on units, never raw indices. THE most important correctness primitive; do not proceed until the pairing invariant holds on randomized inputs.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T4.S1",
+                  "type": "Subtask",
+                  "title": "partitionIntoUnits (plain + toolGroup units)",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/06 §2. A `Unit = {indices:number[], kind:\"plain\"|\"toolGroup\"}`. Algorithm: (1) walk messages, build `toolCallId→assistantIndex` from every AssistantMessage's toolCall blocks; (2) build `toolCallId→resultIndex` from every ToolResultMessage (role:\"toolResult\", .toolCallId); (3) a toolGroup unit = the assistant message at assistantIndex PLUS all resultIndex whose toolCallId maps to that assistant (one assistant may have several toolCalls → all its results join the same unit); (4) any message not in a toolGroup = plain unit (single index); (5) units ordered by min index. CORNER CASES (E1): an orphan toolResult (no matching assistant) → its OWN plain unit (do NOT delete speculatively); an assistant whose results haven't arrived → toolGroup of just the assistant, hide only if no partial results. SAFE RULE: if you cannot confirm BOTH sides of a pair, hide NEITHER.\n2. INPUT: AgentMessage[] (the spec/01 §5 union — roles user/assistant/toolResult/bashExecution/custom/branchSummary/compactionSummary; content blocks incl. {type:\"toolCall\",id,name,arguments}).\n3. LOGIC: Pure, no Pi. Returns Unit[] preserving order.\n4. OUTPUT: partitionIntoUnits consumed by ALL resolvers (P1.M2.T5) and applyRewind (P1.M2.T6). Every removal goes through units → pairing guaranteed by construction.\n5. MOCKING: none.\n6. IMPLICIT TDD: test/transforms.test.ts — spec/10 §1.1: [user, assistant(1 call), result, assistant(text)] → 3 units; orphan result → own plain unit; assistant(3 calls)+3 results → 1 toolGroup (4 indices); INVARIANT: for every toolGroup, every result's toolCallId is in the assistant's call ids and vice versa.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T5",
+              "type": "Task",
+              "title": "Transforms — resolvers (last_tool_call_group, last_turn, checkpoint)",
+              "status": "Planned",
+              "description": "Implement the three relative/absolute targeting resolvers. Relative granularities (default) avoid fragile positional indexing; checkpoint is the advanced absolute mode requiring entry→message mapping.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T5.S1",
+                  "type": "Subtask",
+                  "title": "resolveLastToolCallGroup + resolveLastTurn + resolveCheckpoint",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/06 §3,§4,§6.\n - resolveLastToolCallGroup(units, messages, excludeToolCallId?): iterate units end→backward, skip plain units, skip any toolGroup whose assistant contains a toolCall with id===excludeToolCallId (the rewind's OWN call — without exclusion it would resolve to the rewind itself), return first non-excluded toolGroup indices, else null (nothing to rewind).\n - resolveLastTurn(messages, {to_previous_prompt?}, excludeToolCallId?): find iLastUser = last index with role:\"user\"; if none → remove:[] (protected). DEFAULT (to_previous_prompt===false): KEEP the user message; remove all j>iLastUser EXCEPT the rewind's own unit + any mulligan:* custom messages at the tail (the note MUST survive). Surviving tail = [user][mulligan:note][rewind assistant+result]. NUCLEAR (to_previous_prompt===true): also remove the user message at iLastUser (same exclusions); refuse if iLastUser===iFirstUser (would cross first-user protection). PAIRING: removal is unit-aware (parallel-tool corner case E6/§9 — if rewind's assistant has sibling toolCalls, keep the entire shared assistant+all its results; document solo-use preference).\n - resolveCheckpoint(messages, ctxOrCtxEntries, checkpointName): spec/06 §6 — find the label `mulligan:checkpoint:<name>` on the branch, build ordered context-producing entries, map to message index by walking entries parallel to messages (message→1, custom_message→1, compaction→1+retainedTail.length, branch_summary→1), remove all messages > iTarget with the same tail-exclusions. REFUSE SAFELY + log if mapping indeterminate (e.g. compaction lacks retainedTail) — NEVER guess.\n2. INPUT: partitionIntoUnits output (P1.M2.T4) + messages + the marker's options (excludeToolCallId, to_previous_prompt, checkpoint name). For checkpoint, the branch entries/labels (the filter passes these; resolver stays pure by accepting an already-flattened entries array).\n3. LOGIC: Pure, no Pi. Each returns {remove:number[]} or null.\n4. OUTPUT: consumed by applyRewind in filterPipeline (P1.M2.T6).\n5. MOCKING: none.\n6. IMPLICIT TDD: test/transforms.test.ts — spec/10 §1.2 (last_tool_call_group with/without excludeToolCallId; no toolGroup→null) and §1.3 (last_turn default keeps u1; to_previous_prompt removes u1; first-user refusal). Checkpoint: label found→prefix kept; not-found/indeterminate→refuse(null) safely.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T6",
+              "type": "Task",
+              "title": "Transforms — apply ops, protectedOk, and the pure filterPipeline",
+              "status": "Planned",
+              "description": "Implement applyRewind (unit-aware removal), applyShrink (content substitution preserving role/toolCallId/toolName/isError), resolveShrinkTarget, protectedOk, and the PURE filterPipeline that composes rewinds(oldest-first)→shrinks(oldest-first). Includes the property/invariant tests (pairing on randomized inputs, idempotency, monotonic shrinkage). Nudge injection is NOT here — see architecture/external_deps.md §3.1.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T6.S1",
+                  "type": "Subtask",
+                  "title": "applyRewind, applyShrink, resolveShrinkTarget, protectedOk, filterPipeline (rewinds+shrinks only)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T5.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/06 §5 (shrink), §8 (protected), §11 (composition example), §12 (pipeline pseudocode). Per architecture/external_deps.md §3.1: filterPipeline handles rewinds+shrinks+protectedOk ONLY; the nudge is injected in filter.ts glue (P1.M3.T2/T3) AFTER this pipeline — DO NOT import nudges.ts here (keeps transforms.ts Pi-free + breaks the build-order cycle).\n - applyRewind(messages, removeIndices): gap-closed removal over the resolved unit indices; pairing preserved by construction (units from partitionIntoUnits).\n - resolveShrinkTarget(messages, target): by_tool_call_id → index of ToolResultMessage with toolCallId===id; by_tool_name+occurrence → last/first among toolName===name; by_content_includes → first message whose stringified content includes substring. Return null if no match (no-op this fire).\n - applyShrink(messages, marker): if resolve returns null → unchanged; else replace content with [{type:\"text\",text:replacement}] PRESERVING role/toolCallId/toolName/isError (C-pairing). Multiple shrinks same target → seq order, LAST wins (E17). Shrink after rewind that removed the target → no-op (E8).\n - protectedOk(messages, remove, config): compute iFirstUser & iLatestUser; enforce min(remove)>iFirstUser; for to_previous_prompt refuse if iLatestUser===iFirstUser. Default protectedRoles = [\"first:user\",\"latest:user\"].\n - filterPipeline(messages, markers, config): 1) for each rewind (stableSortBySeq, oldest-first): resolve via granularity → protectedOk check (skip+warn if fails) → applyRewind; 2) for each shrink (oldest-first): applyShrink; 3) return. Idempotent: re-running on stable input yields identical output; a marker whose target is gone → no-op.\n2. INPUT: messages + markers {rewinds, shrinks} (marker shapes from spec/04 §3–5) + config. The pipeline signature mirrors spec/06 §12 but WITHOUT the injectNudge line.\n3. LOGIC: Pure, no Pi, no nudges import. Deterministic ordering by marker seq.\n4. OUTPUT: filterPipeline consumed by filter.ts (P1.M3.T2); resolveShrinkTarget ALSO consumed by tools/shrink.ts (P1.M4.T2) for best-effort match-now feedback.\n5. MOCKING: none.\n6. IMPLICIT TDD: test/transforms.test.ts + test/pipeline.test.ts — spec/10 §1.4 (applyRewind keeps pairing; last_turn keeps rewind's own unit + notes; empty remove→unchanged/idempotent), §1.5 (shrink by_tool_call_id replaces content preserving fields; no match→unchanged; two shrinks last wins), §1.9 (two rewinds compose to spec/06 §11 example index set; rewind-then-shrink-on-removed→shrink no-op; protected→skip+warn). PROPERTY tests (spec/10 §3): pairing invariant NEVER broken on randomized message lists + arbitrary marker sequences; idempotency filterPipeline(filterPipeline(m))===filterPipeline(m); monotonic shrinkage (rewind never increases message count). DO NOT PROCEED until the pairing property test holds on randomized inputs.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M3",
+          "type": "Milestone",
+          "title": "Pi Integration Layer (thin glue, integration-tested)",
+          "status": "Planned",
+          "description": "Wire the pure core to Pi: marker persistence wrappers (the only write path), the context-event filter (the heart), and the two nudges. All Pi-coupled code is thin and fail-open; correctness lives in the pure core.",
+          "tasks": [
+            {
+              "id": "P1.M3.T1",
+              "type": "Task",
+              "title": "Marker persistence wrappers (markers.ts)",
+              "status": "Planned",
+              "description": "Thin wrappers around pi.appendEntry/sendMessage/setLabel that persist markers + the note + checkpoints, capture the marker id immediately after append (C7), and bump the session seq.",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T1.S1",
+                  "type": "Subtask",
+                  "title": "appendRewindMarker / appendShrinkMarker / appendTurnMetric / leaveNote / setCheckpoint",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T3.S1",
+                    "P1.M1.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/02 C7 — appendEntry returns VOID, so to capture a fresh marker's id call `ctx.sessionManager.getLeafId()` (or getLeafEntry()) IMMEDIATELY after `pi.appendEntry(...)`, same synchronous tick, before any other append. Markers are found on read by customType, so the id is mainly for checkpoints (labels need a target id). pi.sendMessage({customType,content,display,details}) appends a custom_message (IN context); pi.setLabel(entryId,label) tags an entry. customType strings namespaced `mulligan:*`. Every persisted data carries {schema:\"pi-mulligan\",v:1,kind}. seq from runtime.nextSeq (P1.M1.T4) stamped into each marker.\n2. INPUT: pi (ExtensionAPI) + ctx (for sessionManager reads) + the typed payloads (RewindMarker/ShrinkMarker/TurnMetric/NoteInput+FileLedger) from spec/04.\n3. LOGIC: Export appendRewindMarker(pi,ctx,payload) → appendEntry(\"mulligan:rewind\", {...envelope, kind:\"rewind\"}); getLeafId() for id; bump rt.seq. appendShrinkMarker similar (\"mulligan:shrink\"). appendTurnMetric (\"mulligan:turn-metric\") used by nudges turn_end. leaveNote(pi, {content, rewindId}) → sendMessage({customType:\"mulligan:note\", content, display:true, details:{schema,v,kind:\"note\",rewindId}}). setCheckpoint(pi,ctx,name) → setLabel(getLeafId(), `mulligan:checkpoint:${name}`). Each wrapped in try/catch + log (fail-open). NOTE ordering (E20): appendEntry(marker) THEN sendMessage(note) — synchronous appends land in call order; the note appears after the rewind tool's result in context (desired).\n4. OUTPUT: consumed by tools/rewind.ts (P1.M4.T1), tools/shrink.ts (P1.M4.T2), tools/checkpoint.ts (P1.M4.T3), nudges.ts turn_end (P1.M3.T3).\n5. MOCKING: integration only — these call real pi.* ; unit-assert via a tiny snippet that appends then reads back via ctx.sessionManager.getEntries() (assert it's a `custom` not `custom_message`).\n6. IMPLICIT TDD: test/markers.test.ts — append a marker, read getEntries(), assert shape + type=custom + customType; leaveNote produces type=custom_message; setCheckpoint/getLabel round-trip (C9).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M3.T2",
+              "type": "Task",
+              "title": "Context-event filter handler (filter.ts)",
+              "status": "Planned",
+              "description": "The heart: a `context` handler that, on every inference, reads markers, runs the pure filterPipeline (rewinds+shrinks), caches the filtered view in runtime.lastFiltered for audit, and returns {messages}. Fail-open on any error (pass-through). Nudge injection is added in P1.M3.T3.",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T2.S1",
+                  "type": "Subtask",
+                  "title": "context handler glue — read markers → filterPipeline → cache lastFiltered → fail-open",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T6.S1",
+                    "P1.M3.T1.S1",
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/06 §1 handler skeleton. context event = {type:\"context\", messages:AgentMessage[]} (deep copy, safe to mutate/replace); return {messages}. Handler: rt=runtime(ctx); try { config=getConfig(); if(!config.enabled) return; markers=readMarkers(ctx) {rewinds,shrinks,metric}; messages=filterPipeline(event.messages, markers, config, ctx) [from P1.M2.T6 — PURE, rewinds+shrinks only]; rt.lastFiltered=messages; rt.lastFilterTs=Date.now(); return {messages} } catch(e){ log(\"error\",\"filter.fire\",ctx,{error}); return; } — FAIL-OPEN pass-through (E13). readMarkers = scan ctx.sessionManager.getEntries() for customType mulligan:rewind/shrink/turn-metric on the current branch; order by seq. The metric (turn-metric) is read here but nudge injection is deferred to P1.M3.T3.\n2. INPUT: event.messages (AgentMessage[]) + ctx.sessionManager.getEntries() (markers) + config (P1.M1.T2) + filterPipeline (P1.M2.T6).\n3. LOGIC: Pi-coupled but thin — all transform logic is in the pure pipeline. Read fresh from getEntries() EVERY invocation (never cache a sessionManager handle — C12). Stable-sort markers by seq (oldest-first).\n4. OUTPUT: {messages} for the inference; rt.lastFiltered cached for mulligan_audit (P1.M4.T4). After P1.M3.T3, this handler is EXTENDED to call shouldNudge/injectNudge after filterPipeline.\n5. MOCKING: integration via the F-rewind-core scenario (inject canary at session_start, drive a rewind, assert canary drops on next context.fire + a second assistant message is produced — the spike's central proof, spec/10 §2.1).\n6. IMPLICIT TDD: test/filter.test.ts + integration smoke. Fail-open asserted via a forced-exception test hook (F-failopen).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M3.T3",
+              "type": "Task",
+              "title": "Nudges — bloated-result reminder + per-turn drift (nudges.ts)",
+              "status": "Planned",
+              "description": "Two zero-extra-request ride-along nudges. Nudge A: a tool_result handler appends a reminder to bloated results. Nudge B: turn_end records a turn-metric; the filter injects an ephemeral (never-persisted) drift annotation on the next inference. Both driven by pure render/decision helpers. This task EXTENDS filter.ts (P1.M3.T2) with nudge injection per architecture/external_deps.md §3.1.",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T3.S1",
+                  "type": "Subtask",
+                  "title": "tool_result annotator (Nudge A) + turn_end metric (Phase 1) + shouldNudge/injectNudge (Phase 2)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T2.S1",
+                    "P1.M2.T1.S1",
+                    "P1.M2.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/07 in full. D4 (zero extra requests) is the central constraint — both nudges ride events that fire anyway. ToolResultEvent is a per-tool discriminated union with shared {content,input,isError}+narrowed toolName; read event.content + event.toolName safely. TurnEndEvent = {turnIndex, message, toolResults} — NO messages array, so deltaTokens uses the in-memory tokenBaseline (P1.M1.T4). The drift nudge CustomMessage is constructed INLINE in the filter and NEVER appended to the session (do NOT call pi.sendMessage) — assert zero mulligan:nudge entries on disk.\n - PHASE 1 (Nudge A, tool_result handler): if !config.enabled||!config.nudges.bloatReminder return; skip if event.toolName startsWith \"mulligan_\"; bytes=resultBytes(event.content); if bytes<bloatThresholdBytes return; else append renderBloatReminder(...) to content (from P1.M2.T3) — APPEND not replace (agent may need the data now); recordBloatHit(ctx, toolName, approxTokens(bytes)) into rt.pendingBloatHits. Return {content}. fail-open.\n - PHASE 1 (Nudge B measure, turn_end handler): compute now = rt.lastFiltered? estimateTokens(rt.lastFiltered).tokens : (ctx.getContextUsage()?.tokens ?? 0); delta = baseline==null? null : now-baseline; bloat=rt.pendingBloatHits (then clear); metric={envelope,kind:\"turn-metric\",seq:nextSeq,deltaTokens:delta,bloatHit:bloat.length>0,bloatHits:bloat,grewOverThreshold:delta!=null&&delta>driftThresholdTokens,turnIndex:event.turnIndex}; appendTurnMetric(pi,ctx,metric) [P1.M3.T1]; rt.tokenBaseline=now; rt.lastTurnIndex=event.turnIndex. fail-open.\n - PHASE 2 (Nudge B inject): EXTEND filter.ts (P1.M3.T2) — after filterPipeline, if config.nudges.perTurnDrift && markers.metric && shouldNudge(metric,config): messages=injectNudge(messages, metric). shouldNudge = metric.grewOverThreshold || metric.bloatHit, BUT suppress if a mulligan:rewind/shrink marker was created during the metric's turn (compare ts windows) — avoids nagging after the agent already acted (spec/07 §2 edge). injectNudge = append an inline CustomMessage {role:\"custom\",customType:\"mulligan:nudge\",content:renderDriftNudge(metric),display:false,details:{ephemeral:true,turnIndex},timestamp:Date.now()} — NOT persisted.\n2. INPUT: event.content/event.toolName (tool_result); event.turnIndex + rt.lastFiltered + rt.tokenBaseline + rt.pendingBloatHits (turn_end); markers.metric (the latest turn-metric, read in filter). config thresholds (P1.M1.T2). Pure helpers from P1.M2.T1 (tokens) + P1.M2.T3 (renderers).\n3. LOGIC: Pi-coupled handlers + pure shouldNudge/injectNudge. bloatThresholdBytes is BYTES (spec/07 §1); driftThresholdTokens is TOKENS.\n4. OUTPUT: annotated tool_result content (rides the result), persisted mulligan:turn-metric entries (read by filter), ephemeral mulligan:nudge in the inference copy.\n5. MOCKING: integration — F-shrink-preventive (>8KB result annotated; turn-metric bloatHit:true) and F-nudge-drift (>3k-token turn → next context.fire ends with a mulligan:nudge; assert ZERO mulligan:nudge entries in session JSONL).\n6. IMPLICIT TDD: test/nudges.test.ts (shouldNudge pure logic; suppression-after-marker) + test/drift_nudge.test.ts + test/turn_metric.test.ts; integration smoke for the two F-* scenarios.\n7. DOCS: the per-tool-bloat-threshold refinement (sibling main evolved beyond the PRD's single threshold — see system_context.md §7) is NOT in v1; note it in code as a known future enhancement.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M4",
+          "type": "Milestone",
+          "title": "Agent-Callable Tools (the API the LLM uses)",
+          "status": "Planned",
+          "description": "The four registered tools with stable names/descriptions/parameter shapes (LLM reliability depends on these). Thin execute() wrappers: validate → write marker(s)/note via markers.ts → return a text result. Never throw; never read event.messages (EXCEPTION: mulligan_audit reads runtime.lastFiltered, read-only).",
+          "tasks": [
+            {
+              "id": "P1.M4.T1",
+              "type": "Task",
+              "title": "mulligan_rewind tool (tools/rewind.ts)",
+              "status": "Planned",
+              "description": "The flagship tool. Validates the 4-field note, extracts the FileLedger over the target span (the single read-only exception), persists marker+note, enforces depth guard + protected-message guard, and appends a mutation warning when the span had side effects.",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T1.S1",
+                  "type": "Subtask",
+                  "title": "mulligan_rewind execute(): validate → ledger → persist marker+note → mutation warning + depth guard",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T1.S1",
+                    "P1.M2.T2.S1",
+                    "P1.M2.T3.S1",
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/05 §1 (RewindParams typebox schema — note:Type.Object{what_happened,avoid,true_current_state,next}; granularity: union last_tool_call_group|last_turn|checkpoint; to_previous_prompt?:boolean; checkpoint?:string). execute(toolCallId, params, signal, onUpdate, ctx). Return {content:[{type:\"text\",text}]} — never throw (try/catch → text). toolCallId is passed into the marker as excludeToolCallId (so the filter skips the rewind's own group — spec/06 §3). BEHAVIOR (spec/05 §1 steps): (1) if !config.rewind.enabled → refuse text; (2) validateNote (P1.M2.T3) — all 4 non-empty or refuse; (3) validate granularity/target — last_tool_call_group/last_turn always valid; checkpoint must exist as a `mulligan:checkpoint:<name>` label on the branch or refuse (E10); (4) DEPTH GUARD: count active mulligan:rewind markers on the branch; if >= config.rewind.maxDepth (default 5) refuse naming the count + suggest mulligan_shrink/continue (E4); (5) COMPOSE LEDGER+NOTE — the ONE read exception (spec/03 §2.1, spec/05 §1 step 5): do a READ-ONLY resolution using the pure helpers (P1.M2.T2 extractFileLedger) over a snapshot from ctx.sessionManager.buildContextEntries() converted to messages, to extract the FileLedger for the target span; best-effort if ambiguous (ledger is advisory); renderNote(note, ledger, granularity) (P1.M2.T3); (6) PERSIST — appendRewindMarker(pi,ctx,{envelope,id,granularity,options:{to_previous_prompt,protect},excludeToolCallId:toolCallId,seq,note,ledger,ts}) [P1.M3.T1]; then leaveNote(pi,{content:renderedNote,rewindId:id}); bump rt.seq; (7) if config.rewind.requireMutationWarning && ledger.modifiedFiles/bashSideEffects non-empty → append the ⚠ warning to the success text (E5); (8) return success text with K=estimated messages hidden (0 reported honestly). The tool records a SPEC not absolute indices (resolution deferred to the filter — D7, compaction-robust).\n2. INPUT: params (validated via typebox) + toolCallId + ctx (sessionManager for the read-only ledger snapshot + active-marker count) + config + markers.ts + ledger.ts + notes.ts.\n3. LOGIC: validate → guards → read-only ledger extract → persist marker → persist note → optional warning → return. Tools are WRITE-ONLY w.r.t. the message list (the ledger read is explicitly the sanctioned exception).\n4. OUTPUT: a marker (filter consumes) + a mulligan:note (model reads) + a confirmation text for the calling turn.\n5. MOCKING: integration — F-rewind-core (canary dropped next context.fire, second assistant produced), F-protected (refuses first-user to_previous_prompt, no marker), F-maxdepth (6th refuses), F-checkpoint (rewind to label hides to prefix).\n6. IMPLICIT TDD: test/tools/rewind.test.ts (refusal paths: disabled, empty note, checkpoint-missing, maxdepth) + integration smoke.\n7. DOCS: the tool description string is load-bearing for LLM usage — use spec/05 §5 verbatim.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M4.T2",
+              "type": "Task",
+              "title": "mulligan_shrink tool (tools/shrink.ts)",
+              "status": "Planned",
+              "description": "Validates the replacement, does a best-effort match-now (using the pure resolver) for immediate feedback, persists the shrink marker. Retroactive shrink is a view-substitution, not a JSONL rewrite (C6).",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T2.S1",
+                  "type": "Subtask",
+                  "title": "mulligan_shrink execute(): validate → match-now → persist shrink marker",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T1.S1",
+                    "P1.M2.T6.S1",
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/05 §2 (ShrinkParams — target: union {by_tool_call_id}|{by_tool_name,occurrence:last|first}|{by_content_includes}; replacement:string; reason?:string) + spec/06 §5 (resolveShrinkTarget + applyShrink, from P1.M2.T6). C6: retroactive shrink CANNOT rewrite the past result on disk (tool_result already fired) — it's a VIEW SUBSTITUTION persisted as a marker the filter honors. BEHAVIOR (spec/05 §2): (1) if !config.shrink.enabled → refuse; (2) validate replacement non-empty; (3) MATCH-NOW best-effort using resolveShrinkTarget (P1.M2.T6) over a read-only snapshot — for immediate feedback (matched: yes/no) and to reject structurally-impossible targets (e.g. unknown id format); a current no-match is NOT a hard refusal (content may appear before compaction settles) — refuse only if structurally impossible; (4) appendShrinkMarker(pi,ctx,{envelope,id,target,replacement,reason,seq,ts}) [P1.M3.T1]; (5) return feedback text. The filter applies shrinks AFTER rewinds and substitutes content in place preserving role/toolCallId/toolName/isError (C-pairing, P1.M2.T6).\n2. INPUT: params + ctx (read-only snapshot for match-now) + config + markers.ts + resolveShrinkTarget (P1.M2.T6).\n3. LOGIC: validate → best-effort match → persist marker → feedback. Never throw.\n4. OUTPUT: a shrink marker (filter consumes on every inference; resolves live each fire → compaction-robust).\n5. MOCKING: integration — F-shrink-persist (agent shrinks a large canary result; next inference filtered view shows replacement; session JSONL toolResult is STILL the original — assert original on disk + substitution in filtered cache).\n6. IMPLICIT TDD: test/tools/shrink.test.ts (empty replacement refuses; match-now feedback; structurally-impossible id refuses) + integration smoke.\n7. DOCS: tool description from spec/05 §5 (clear shrink-vs-rewind guidance).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M4.T3",
+              "type": "Task",
+              "title": "mulligan_checkpoint tool (tools/checkpoint.ts)",
+              "status": "Planned",
+              "description": "Tags the current leaf with a `mulligan:checkpoint:<name>` label so a later rewind can target it. Trivial — wraps setCheckpoint.",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T3.S1",
+                  "type": "Subtask",
+                  "title": "mulligan_checkpoint execute(): validate name → setCheckpoint",
+                  "status": "Planned",
+                  "story_points": 0.5,
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/05 §3 (CheckpointParams — name:string) + spec/04 §6 (a checkpoint is a Pi LabelEntry via pi.setLabel; NOT a CustomEntry). Names MUST match /^[a-z0-9_-]{1,40}$/ (E10). setLabel overwrites a prior checkpoint of the same name (labels are unique-per-target; setting same label on a new target moves it — acceptable, spec/05 §3 step 3). BEHAVIOR: (1) validate name matches the regex or refuse; (2) setCheckpoint(pi,ctx,name) [P1.M3.T1 → setLabel(getLeafId(), `mulligan:checkpoint:${name}`)]; (3) return text with the entry id + usage hint (mulligan_rewind granularity:checkpoint checkpoint:<name>).\n2. INPUT: params.name + ctx (getLeafId) + markers.setCheckpoint.\n3. LOGIC: validate → setCheckpoint → text. Never throw.\n4. OUTPUT: a label entry on the leaf (filter.resolveCheckpoint consumes, P1.M2.T5).\n5. MOCKING: integration — F-checkpoint (label exists; rewind to it hides back to the labeled point; filtered message count drops to prefix).\n6. IMPLICIT TDD: test/tools/checkpoint.test.ts (invalid name refuses; valid name → label round-trips via getLabel — C9).\n7. DOCS: tool description from spec/05 §5.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M4.T4",
+              "type": "Task",
+              "title": "mulligan_audit tool (tools/audit.ts) — the read-only exception",
+              "status": "Planned",
+              "description": "Reports a token breakdown of the FILTERED view (what the model actually sees — NEVER ctx.getContextUsage() which counts hidden tokens, D5), flags the biggest contributors, and lists active markers. Closes the feedback loop so rewind/shrink decisions are informed.",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T4.S1",
+                  "type": "Subtask",
+                  "title": "mulligan_audit execute(): read lastFiltered → estimateTokens → render markdown report",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T2.S1",
+                    "P1.M2.T1.S1",
+                    "P1.M1.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/05 §4 (AuditParams — top?:number default 8) + spec/06 §7 (caching the filtered view). D5 is load-bearing: the audit MUST compute tokens from rt.lastFiltered (the filtered view), NOT ctx.getContextUsage() (which still counts hidden messages — bookkeeping drift). BEHAVIOR (spec/05 §4): (1) build the filtered message list — prefer rt.lastFiltered if fresh (a filter fired this session); if null (audit called before any inference — E16, possible as a first action in print mode) fall back to converting ctx.sessionManager.buildContextEntries() to messages + applying the transform pipeline (filterPipeline P1.M2.T6) so the report reflects post-rewind/shrink reality; flag confidence \"low\" in that case; (2) estimateTokens per message (P1.M2.T1), sort desc, take top; (3) read active markers from getEntries(); (4) render the spec/05 §4 markdown report (Total (filtered) ~tokens with confidence; Active markers; Protected note; Top messages by size flagging any above config.nudges.bloatThresholdBytes; a Suggestion naming the single largest contributor); (5) return — PERSIST NOTHING.\n2. INPUT: rt.lastFiltered (P1.M3.T2 writes it) + ctx.sessionManager.getEntries()/buildContextEntries() + config (thresholds, confidence) + estimateTokens (P1.M2.T1) + filterPipeline (P1.M2.T6, for the fallback).\n3. LOGIC: read-only transform of the cached filtered view into a report. Never throw.\n4. OUTPUT: a markdown report string as the tool result. No persistence.\n5. MOCKING: integration — drive a big read, call mulligan_audit, assert the report names that read as the largest contributor and the total reflects the filtered (not raw) count.\n6. IMPLICIT TDD: test/tools/audit.test.ts — report renders with confidence flag; top-N respected; suggestion names largest; fallback path (no lastFiltered) flags low confidence without crashing.\n7. DOCS: tool description from spec/05 §5.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M5",
+          "type": "Milestone",
+          "title": "Wiring, Edge-Case Pass & Verification (Definition of Done)",
+          "status": "Planned",
+          "description": "Wire everything in index.ts, run the full E1–E20 edge-case checklist, build the integration smoke harness (9 F-* scenarios against real `pi -p`), and finalize changeset-level documentation (Mode B). Definition of Done (spec/11 §3): all Tier-1 unit tests green incl. pairing property; all F-* integration scenarios green; mulligan:nudge provably never persisted; config.enabled=false = pure no-op; an intentional filter exception does not break a turn; README documents install/tools/config/soft-delete guarantee.",
+          "tasks": [
+            {
+              "id": "P1.M5.T1",
+              "type": "Task",
+              "title": "Extension factory wiring (index.ts)",
+              "status": "Planned",
+              "description": "Register the 4 tools, attach the 4 handlers (session_start, context, tool_result, turn_end), wire config + runtime init. Confirm zero-config works out of the box (all defaults).",
+              "subtasks": [
+                {
+                  "id": "P1.M5.T1.S1",
+                  "type": "Subtask",
+                  "title": "Wire tools + handlers + config + runtime in the default factory",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M4.T1.S1",
+                    "P1.M4.T2.S1",
+                    "P1.M4.T3.S1",
+                    "P1.M4.T4.S1",
+                    "P1.M3.T3.S1",
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/11 §1.1 `pi.extensions:[\"./src/index.ts\"]`; spec/03 §2 component diagram; spec/05 §5 tool-registration summary (names mulligan_rewind/shrink/checkpoint/audit with labels + the verbatim descriptions). Factory MAY be async but Mulligan's is sync (no long-lived resources — spec/01). Handlers: session_start (init runtime + tokenBaseline), context (filter.ts P1.M3.T2, EXTENDED by P1.M3.T3 for nudge), tool_result (Nudge A, P1.M3.T3), turn_end (metric, P1.M3.T3). registerTool calls use typebox schemas from P1.M4.*\n2. INPUT: all modules from P1.M1–M4.\n3. LOGIC: `export default function (pi: ExtensionAPI) { pi.on(\"session_start\",…); pi.on(\"context\",…); pi.on(\"tool_result\",…); pi.on(\"turn_end\",…); pi.registerTool(rewindTool); …(shrink,checkpoint,audit) }`. getConfig() called lazily by handlers (cached). Confirm NO pi.sendUserMessage, NO registerCommand, NO pi.registerShortcut anywhere (D8, C2).\n4. OUTPUT: the loadable, complete extension. `pi -e ./src/index.ts` with NO `mulligan` settings works out of the box.\n5. MOCKING: integration — full TUI manual smoke (spec/10 §4): big read → bloat reminder; mulligan_audit; mulligan_rewind; confirm via /tree that hidden content is still visible while model behavior reflects the rewind; /reload preserves markers.\n6. IMPLICIT TDD: test/index.test.ts — factory registers 4 tools + attaches handlers without throwing; zero-config (no mulligan settings) loads; config.enabled=false makes the context handler pass-through and tools refuse (E14).\n7. DOCS: none per-file (wiring); README is P1.M5.T4.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M5.T2",
+              "type": "Task",
+              "title": "Edge-case pass (E1–E20) — targeted verification",
+              "status": "Planned",
+              "description": "Walk spec/08 E1–E20 as a checklist with targeted tests/scenarios: orphan toolResult (E1), rewinding-the-executing-turn exclusion (E2), protected-message refusal (E3), max-depth (E4), side-effect mutation warning (E5), parallel-tool mode conservative handling (E6), compaction-leak as bounded/transient (E7), marker-targets-nothing no-op (E8), note validation (E9), checkpoint name/exists (E10), reload (E11), getContextUsage undefined (E12), tool throws → fail-open (E13), config-disabled no-op (E14), marker accumulation (E15), audit-before-inference (E16), two shrinks same target last-wins (E17), model ignores nudges (E18), shrink non-toolResult (E19), append/sendMessage ordering (E20).",
+              "subtasks": [
+                {
+                  "id": "P1.M5.T2.S1",
+                  "type": "Subtask",
+                  "title": "E1–E20 edge-case suite + integration scenarios for the load-bearing ones",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M5.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/08 in full — every entry gives situation/risk/behavior. Most are already covered by the implicit-TDD tests of P1.M2–M4; this task is the CONSOLIDATION + gap-fill pass to prove the whole matrix. Priority load-bearing cases that need dedicated integration: E6 (parallel-tool mode — keep entire shared assistant+results, hide previous; spec/06 §9), E11 (reload — markers survive --session-id re-open; filter re-hides), E13 (forced filter exception → pass-through, no turn break — F-failopen), E7 (compaction summarizes hidden content → accepted bounded/transient, document as known limitation), E20 (appendEntry then sendMessage land in call order).\n2. INPUT: the wired extension (P1.M5.T1) + spec/08.\n3. LOGIC: create test/edge-cases.test.ts covering all 20 with unit where possible and integration for the load-bearing ones; where an edge is inherently a documented limitation (E7 compaction leak, E18 ignored nudges), assert the documented behavior (no crash; nudge advisory) and add a README note in P1.M5.T4.\n4. OUTPUT: green edge-case matrix; known limitations documented.\n5. MOCKING: unit (pure helpers) + integration (real pi -p for E6/E11/E13).\n6. IMPLICIT TDD: this IS the test task's substance — but per SOW it is not a standalone 'write tests' subtask; it is the verification-of-correctness work that rides with the feature, consolidated here as the definition-of-done gate. Pairing-invariant property test (randomized) MUST be included and green.\n7. DOCS: add known-limitation notes (E7, E18, E15 no GC) to README (P1.M5.T4).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M5.T3",
+              "type": "Task",
+              "title": "Integration smoke harness (test/integration/smoke.ts + scenarios.md)",
+              "status": "Planned",
+              "description": "Adapt spec/reference/looper-smoke.proto.ts (rename looper_* → mulligan_*) into the Mulligan module layout; drive real `pi -e ./src/index.ts -p \"…\"` runs and assert on a structured JSONL log + session JSONL for all 9 F-* scenarios (spec/10 §2.1).",
+              "subtasks": [
+                {
+                  "id": "P1.M5.T3.S1",
+                  "type": "Subtask",
+                  "title": "Smoke harness + run-smoke driver + the 9 F-* scenarios (F-rewind-core … F-reload)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M5.T1.S1",
+                    "P1.M5.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/10 §2 + the proven harness spec/reference/looper-smoke.proto.ts (the spike's evidence — adapt, do not re-derive). The 9 scenarios (spec/10 §2.1 table): F-rewind-core (canary dropped on next context.fire; second assistant produced; JSONL has mulligan:rewind + mulligan:note); F-shrink-persist (filtered view shows replacement; session JSONL toolResult is STILL the original); F-shrink-preventive (>8KB result annotated; turn-metric bloatHit:true); F-nudge-drift (>3k-token turn → next filtered view ends with mulligan:nudge; assert ZERO mulligan:nudge in session JSONL); F-protected (first-user to_previous_prompt refused; no marker); F-maxdepth (6th refuses); F-checkpoint (label exists; rewind hides to prefix); F-failopen (forced exception → pass-through; no turn break; error logged); F-reload (rewind, re-open via --session-id, one more turn → filter still hides the canary). Driving reliability (spec/10 §2.2): use a deterministic instruction-following model (spike used glm-5.2) with explicit prompts; provide a fallback /mulligan_smoke <scenario> deterministic path for scenarios that don't need model judgment. Log every context.fire with {count,canaryPresent,notePresent,hasRewindMarker}. Session-JSONL assertions (spec/10 §2.3): mulligan:rewind/shrink/turn-metric are `custom` (not custom_message); mulligan:note is `custom_message`; mulligan:nudge NEVER persisted; checkpoints are `label` with prefix.\n2. INPUT: the wired extension (P1.M5.T1) + the proto harness + spec/10.\n3. LOGIC: test/integration/smoke.ts registers handlers/tools + logs structured JSONL; test/integration/run-smoke.mjs drives `pi -e ./src/index.ts -p …` per scenario and parses the log + session JSONL; test/integration/scenarios.md documents each. Add the property tests (spec/10 §3) if not already in transforms tests.\n4. OUTPUT: `npm run smoke` (or the package.json smoke script) runs all 9 F-* scenarios green against real pi -p; the JSONL grep for mulligan:nudge returns 0 across all scenarios.\n5. MOCKING: real pi -p (no mocks) — this is the end-to-end proof; deterministic-command fallback for model-independent scenarios.\n6. IMPLICIT TDD: this harness IS the integration verification tier; it must be green as a definition-of-done gate (spec/11 §3).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M5.T4",
+              "type": "Task",
+              "title": "Changeset-level documentation (Mode B) + packaging",
+              "status": "Planned",
+              "description": "Whole-feature/overview documentation that only makes sense once the change lands (Mode B per SOW §5): README (install, configure, the 4 tools, the soft-delete/visible-in-/tree guarantee, known limitations), confirm zero-config works, and optionally package as a pi package (docs/packages.md).",
+              "subtasks": [
+                {
+                  "id": "P1.M5.T4.S1",
+                  "type": "Subtask",
+                  "title": "README (install/config/usage/guarantees) + zero-config confirmation + optional pi packaging",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M5.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: spec/11 §3 definition of done #6 (README documents install, the four tools, configuration, and the soft-delete/visible-in-/tree guarantee). This is Mode B (changeset-level) documentation — depends on ALL implementing subtasks. Link the decision log to spec/. Document known limitations surfaced in P1.M5.T2: compaction may transiently summarize hidden content (E7); markers persist with no GC (E15); nudges are advisory (E18); the per-tool-bloat refinement is future (system_context.md §7). Confirm zero-config: `pi -e ./src/index.ts` with NO mulligan config works out of the box (all defaults).\n2. INPUT: the complete, verified extension (P1.M5.T3 green).\n3. LOGIC: write README.md (install — global ~/.pi/agent/extensions or project .pi/extensions or pi -e; configuration — the spec/09 knob table summarized; usage — the 4 tools with the spec/05 §5 descriptions + when-to-use guidance; guarantees — soft-delete, audit trail via /tree, no extra model requests, fail-open; known limitations). Optionally `pi install` packaging per docs/packages.md (spec/12 references).\n4. OUTPUT: README.md (+ optional packaging manifest).\n5. MOCKING: none.\n6. IMPLICIT TDD: verify by a fresh-eyes load test: install per README with zero config, run a simple prompt, confirm no error and the tools are available.\n7. DOCS: this IS the documentation subtask (Mode B).",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

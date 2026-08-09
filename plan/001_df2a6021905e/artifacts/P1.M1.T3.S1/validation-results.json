@@ -1,0 +1,46 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "npx tsc --noEmit",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx vitest run test/log.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/log.test.ts  (15 tests) 17ms\n\n Test Files  1 passed (1)\n      Tests  15 passed (15)\n   Start at  21:47:22\n   Duration  383ms (transform 35ms, setup 0ms, collect 29ms, tests 17ms, environment 0ms, prepare 116ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "pi -e ./src/index.ts -p hi",
+    "stdout": "Hi! How can I help you today?\n\nI'm working in `/home/dustin/projects/pi-mulligan-hack`. Let me know what you'd like to do — whether it's exploring the code, making changes, running something, or anything else.\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]

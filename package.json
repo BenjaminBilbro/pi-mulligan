@@ -1,0 +1,24 @@
+{
+  "name": "pi-mulligan",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5",
+    "vitest": "^1"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "smoke": "pi -e ./src/index.ts -p \"hi\""
+  }
+}

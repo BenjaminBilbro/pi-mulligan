@@ -1,0 +1,46 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "test -f package.json -a -f tsconfig.json -a -f src/index.ts -a -f src/config.ts -a -f src/log.ts -a -f src/runtime.ts -a -f src/markers.ts -a -f src/filter.ts -a -f src/transforms.ts -a -f src/ledger.ts -a -f src/tokens.ts -a -f src/notes.ts -a -f src/nudges.ts -a -f src/tools/rewind.ts -a -f src/tools/shrink.ts -a -f src/tools/checkpoint.ts -a -f src/tools/audit.ts -a -d test -a -d test/integration",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "pi -e ./src/index.ts -p hi",
+    "stdout": "Hi! How can I help you today?\n\nI'm working in `/home/dustin/projects/pi-mulligan-hack`. Let me know what you'd like to do — whether it's exploring the code, making changes, debugging, or something else.\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "node --input-type=module -e \"import{readFileSync}from'node:fs';const p=JSON.parse(readFileSync('package.json','utf8')),t=JSON.parse(readFileSync('tsconfig.json','utf8'));const ok=p.type==='module'&&p.main==='src/index.ts'&&Array.isArray(p.pi?.extensions)&&p.dependencies['@earendil-works/pi-coding-agent']&&p.dependencies.typebox&&p.devDependencies.typescript&&p.devDependencies.vitest&&p.scripts.test&&p.scripts.smoke&&t.compilerOptions.target==='ES2022'&&t.compilerOptions.module==='ESNext'&&t.compilerOptions.moduleResolution==='Bundler'&&t.compilerOptions.strict===true&&t.compilerOptions.noImplicitAny===true&&Array.isArray(t.compilerOptions.types)&&t.compilerOptions.types.includes('node')&&t.compilerOptions.skipLibCheck===true;if(!ok)process.exit(1)\"",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]
