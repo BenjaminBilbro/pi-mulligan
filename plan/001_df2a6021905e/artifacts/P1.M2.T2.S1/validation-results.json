@@ -1,0 +1,46 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "test -f src/ledger.ts -a -f test/ledger.test.ts",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx tsc --noEmit",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "npx vitest run test/ledger.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/ledger.test.ts  (39 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  39 passed (39)\n   Start at  22:04:07\n   Duration  344ms (transform 52ms, setup 0ms, collect 33ms, tests 6ms, environment 0ms, prepare 160ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]
