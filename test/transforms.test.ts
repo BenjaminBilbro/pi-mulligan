@@ -1,5 +1,13 @@
 import { describe, it, expect, expectTypeOf } from "vitest";
-import { partitionIntoUnits, type Unit, type MessageLike } from "../src/transforms.js";
+import {
+  partitionIntoUnits,
+  resolveLastToolCallGroup,
+  resolveLastTurn,
+  resolveCheckpoint,
+  type Unit,
+  type MessageLike,
+  type BranchEntry,
+} from "../src/transforms.js";
 
 // No beforeEach needed: transforms.ts has NO module-scoped mutable state (pure over its arguments).
 
@@ -37,6 +45,16 @@ function user(text: string): MessageLike {
 /** Build a custom message (e.g. mulligan:note / mulligan:nudge) → must be a plain unit. */
 function custom(customType: string): MessageLike {
   return { role: "custom", customType, content: "x", display: true };
+}
+
+/** Build a minimal branch entry (SessionEntry-like). */
+function entry(id: string, type: BranchEntry["type"], extra: Record<string, unknown> = {}): BranchEntry {
+  return { type, id, parentId: null, timestamp: "t", ...extra };
+}
+
+/** Build a mulligan:checkpoint LabelEntry pointing at targetId. */
+function labelEntry(id: string, targetId: string, name: string): BranchEntry {
+  return { type: "label", id, parentId: null, timestamp: "t", targetId, label: `mulligan:checkpoint:${name}` };
 }
 
 /** Compact per-unit summary "kind:minIdx:len" for readable multi-unit assertions. */
@@ -374,5 +392,489 @@ describe("types", () => {
   it("accepts null | undefined input (defensive signature)", () => {
     expectTypeOf(partitionIntoUnits(null)).toEqualTypeOf<Unit[]>();
     expectTypeOf(partitionIntoUnits(undefined)).toEqualTypeOf<Unit[]>();
+  });
+});
+
+// ── resolveLastToolCallGroup (spec/10 §1.2) ────────────────────────────────────────────
+
+describe("resolveLastToolCallGroup — spec/10 §1.2 PINNED contract", () => {
+  it("no exclude → returns the LAST toolGroup's indices (a(B)+r(B))", () => {
+    const msgs: MessageLike[] = [user("u"), asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("plain:0:1 | toolGroup:1:2 | toolGroup:3:2");
+    expect(resolveLastToolCallGroup(units, msgs)).toEqual([3, 4]); // the a(B)+r(B) toolGroup
+  });
+
+  it("excludeToolCallId='B' → returns the a(A)+r(A) toolGroup's indices (skips the rewind's own)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(resolveLastToolCallGroup(units, msgs, "B")).toEqual([1, 2]); // the a(A)+r(A) toolGroup
+  });
+
+  it("no toolGroup at all → null", () => {
+    const msgs: MessageLike[] = [user("u"), asstText("thinking"), custom("mulligan:note")];
+    const units = partitionIntoUnits(msgs);
+    expect(units.every((u) => u.kind === "plain")).toBe(true);
+    expect(resolveLastToolCallGroup(units, msgs)).toBeNull();
+  });
+});
+
+describe("resolveLastToolCallGroup — exclude semantics", () => {
+  it("excludeToolCallId matching NO unit → returns the last toolGroup (nothing skipped)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(resolveLastToolCallGroup(units, msgs, "DOES-NOT-EXIST")).toEqual([3, 4]);
+  });
+
+  it("only ONE toolGroup and exclude matches it → null (the only toolGroup was the rewind's own)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("only"), result("only")];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("plain:0:1 | toolGroup:1:2");
+    expect(resolveLastToolCallGroup(units, msgs, "only")).toBeNull();
+  });
+
+  it("excludeToolCallId is undefined → never skips (same as no exclude)", () => {
+    const msgs: MessageLike[] = [asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(resolveLastToolCallGroup(units, msgs, undefined)).toEqual([2, 3]);
+  });
+
+  it("excludeToolCallId is empty string / non-string → never skips", () => {
+    const msgs: MessageLike[] = [asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(resolveLastToolCallGroup(units, msgs, "")).toEqual([2, 3]);
+    expect(resolveLastToolCallGroup(units, msgs, 123 as unknown as string)).toEqual([2, 3]);
+  });
+
+  it("skips EVERY toolGroup whose assistant issued the exclude id, landing on an earlier one", () => {
+    const msgs: MessageLike[] = [asst("X"), result("X"), asst("Y"), result("Y"), asst("Z"), result("Z")];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("toolGroup:0:2 | toolGroup:2:2 | toolGroup:4:2");
+    expect(resolveLastToolCallGroup(units, msgs, "Z")).toEqual([2, 3]);
+  });
+});
+
+describe("resolveLastToolCallGroup — parallel-tool mode (spec/06 §9 / spec/08 E6)", () => {
+  it("rewind shares an assistant message with a sibling call → that toolGroup is skipped, previous returned", () => {
+    const msgs: MessageLike[] = [
+      asst("prev"),
+      result("prev"),
+      asst("X", "REW"), // shared assistant message
+      result("X"),
+      result("REW"),
+    ];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("toolGroup:0:2 | toolGroup:2:3");
+    expect(resolveLastToolCallGroup(units, msgs, "REW")).toEqual([0, 1]);
+  });
+
+  it("only the shared toolGroup exists → exclude it → null", () => {
+    const msgs: MessageLike[] = [asst("A", "REW"), result("A"), result("REW")];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("toolGroup:0:3");
+    expect(resolveLastToolCallGroup(units, msgs, "REW")).toBeNull();
+  });
+});
+
+describe("resolveLastToolCallGroup — defensive (NEVER throws — spec/08 E13)", () => {
+  it("non-array units → null (no throw)", () => {
+    expect(resolveLastToolCallGroup(null as unknown as Unit[], [])).toBeNull();
+    expect(resolveLastToolCallGroup(undefined as unknown as Unit[], [])).toBeNull();
+    expect(resolveLastToolCallGroup("nope" as unknown as Unit[], [])).toBeNull();
+  });
+
+  it("a toolGroup whose assistant is a throwing-Proxy → no match → returned (fail-safe, no throw)", () => {
+    const trap: MessageLike = new Proxy(
+      { role: "assistant", content: [{ type: "toolCall", id: "self", name: "mulligan_rewind", arguments: {} }] } as MessageLike,
+      new Proxy({}, { get() { throw new Error("trap"); } }),
+    );
+    const msgs: MessageLike[] = [asst("real"), result("real"), trap, result("self")];
+    const units = partitionIntoUnits(msgs);
+    expect(() => resolveLastToolCallGroup(units, msgs, "self")).not.toThrow();
+    expect(resolveLastToolCallGroup(units, msgs, "self")).not.toBeNull();
+  });
+
+  it("malformed messages array (non-array) → exclude never matches → returns last toolGroup", () => {
+    const msgs = "garbage" as unknown as MessageLike[];
+    const units: Unit[] = [
+      { indices: [0, 1], kind: "toolGroup" },
+      { indices: [2, 3], kind: "toolGroup" },
+    ];
+    expect(resolveLastToolCallGroup(units, msgs, "whatever")).toEqual([2, 3]);
+  });
+
+  it("a malformed unit record in the list is skipped, not crashing", () => {
+    const msgs: MessageLike[] = [asst("A"), result("A")];
+    const units = [
+      null,
+      { kind: "toolGroup" }, // no indices
+      { indices: [0, 1], kind: "toolGroup" },
+    ] as unknown as Unit[];
+    expect(() => resolveLastToolCallGroup(units, msgs)).not.toThrow();
+    expect(resolveLastToolCallGroup(units, msgs)).toEqual([0, 1]);
+  });
+});
+
+describe("resolveLastToolCallGroup — ordering, purity, types", () => {
+  it("plain units interspersed between toolGroups are skipped", () => {
+    const msgs: MessageLike[] = [asst("A"), result("A"), asstText("chat"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    expect(summary(units)).toBe("toolGroup:0:2 | plain:2:1 | toolGroup:3:2");
+    expect(resolveLastToolCallGroup(units, msgs)).toEqual([3, 4]);
+  });
+
+  it("is pure / idempotent — same input → same output, no mutation", () => {
+    const msgs: MessageLike[] = [user("u"), asst("A"), result("A"), asst("B"), result("B")];
+    const units = partitionIntoUnits(msgs);
+    const a = resolveLastToolCallGroup(units, msgs, "B");
+    const b = resolveLastToolCallGroup(units, msgs, "B");
+    expect(a).toEqual(b);
+    expect(JSON.stringify(units)).toBe(JSON.stringify(partitionIntoUnits(msgs)));
+  });
+
+  it("returns the unit's indices reference (the exact indices array)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("A"), result("A")];
+    const units = partitionIntoUnits(msgs);
+    const toolGroup = units.find((u) => u.kind === "toolGroup")!;
+    expect(resolveLastToolCallGroup(units, msgs)).toBe(toolGroup.indices); // same array reference
+  });
+
+  it("returns number[] | null", () => {
+    expectTypeOf(resolveLastToolCallGroup([], [])).toEqualTypeOf<number[] | null>();
+    expectTypeOf(resolveLastToolCallGroup([], [], "x")).toEqualTypeOf<number[] | null>();
+  });
+});
+
+// ── resolveLastTurn (spec/10 §1.3) ────────────────────────────────────────────────────
+
+describe("resolveLastTurn — spec/10 §1.3 PINNED contract", () => {
+  const twoTurns = (): MessageLike[] => [
+    user("u0"), asst("c0"), result("c0"),
+    user("u1"), asst("c1"), result("c1"),
+  ];
+
+  it("default → remove indices AFTER u1 (keep u1): remove = [4,5]", () => {
+    expect(resolveLastTurn(twoTurns(), {}).remove).toEqual([4, 5]);
+    expect(resolveLastTurn(twoTurns(), undefined).remove).toEqual([4, 5]); // opts may be undefined
+  });
+
+  it("to_previous_prompt:true → ALSO remove u1: remove = [3,4,5] (iLastUser=3, iFirstUser=0 → allowed)", () => {
+    expect(resolveLastTurn(twoTurns(), { to_previous_prompt: true }).remove).toEqual([3, 4, 5]);
+  });
+
+  it("u1 is the FIRST user → nuclear refused by protected check: { remove: [] }", () => {
+    const singleTurn: MessageLike[] = [user("only"), asst("c"), result("c")];
+    expect(resolveLastTurn(singleTurn, { to_previous_prompt: true })).toEqual({ remove: [] });
+  });
+});
+
+describe("resolveLastTurn — the rewind's OWN unit survives (default)", () => {
+  it("rewind's assistant+result after iLastUser are kept; prior-turn work is removed", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("prev"), result("prev"), asst("REW"), result("REW"),
+    ];
+    expect(resolveLastTurn(msgs, {}, "REW").remove).toEqual([4, 5]); // [6,7] kept (rewind's own unit)
+  });
+
+  it("rewind's own unit is kept WHOLE even if it shares a message (parallel-tool — spec/06 §9 / spec/08 E6)", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("prev"), result("prev"), asst("sib", "REW"), result("sib"), result("REW"),
+    ];
+    expect(resolveLastTurn(msgs, {}, "REW").remove).toEqual([4, 5]); // shared unit [6,7,8] kept whole
+  });
+});
+
+describe("resolveLastTurn — mulligan:* notes survive at the tail", () => {
+  it("a mulligan:note after iLastUser is NOT removed", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("c1"), result("c1"), custom("mulligan:note"),
+    ];
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([4, 5]);
+  });
+
+  it("a mulligan:nudge (ephemeral) after iLastUser is also kept", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("c1"), result("c1"), custom("mulligan:nudge"),
+    ];
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([4, 5]);
+  });
+
+  it("multiple mulligan:* notes interspersed with removed work all survive", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("c1"), result("c1"), custom("mulligan:note"), custom("mulligan:note"),
+    ];
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([4, 5]);
+  });
+});
+
+describe("resolveLastTurn — no-op cases", () => {
+  it("no user message at all → { remove: [] }", () => {
+    const msgs: MessageLike[] = [asst("c"), result("c"), custom("mulligan:note")];
+    expect(resolveLastTurn(msgs, {})).toEqual({ remove: [] });
+    expect(resolveLastTurn(msgs, { to_previous_prompt: true })).toEqual({ remove: [] });
+  });
+
+  it("nothing after iLastUser → { remove: [] }", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), user("u1")];
+    expect(resolveLastTurn(msgs, {})).toEqual({ remove: [] });
+    expect(resolveLastTurn(msgs, { to_previous_prompt: true }).remove).toEqual([3]);
+  });
+});
+
+describe("resolveLastTurn — excludeToolCallId semantics", () => {
+  it("excludeToolCallId absent → rewind's own unit is NOT kept (removed with the rest); note survives", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("REW"), result("REW"), asst("c2"), result("c2"), custom("mulligan:note"),
+    ];
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([4, 5, 6, 7]);
+  });
+
+  it("excludeToolCallId empty string / non-string → never keeps an own unit", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("REW"), result("REW"),
+    ];
+    expect(resolveLastTurn(msgs, {}, "").remove).toEqual([4, 5]);
+    expect(resolveLastTurn(msgs, {}, 123 as unknown as string).remove).toEqual([4, 5]);
+  });
+
+  it("excludeToolCallId matching NO unit → nothing kept (same as absent)", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("c1"), result("c1"),
+    ];
+    expect(resolveLastTurn(msgs, {}, "DOES-NOT-EXIST").remove).toEqual([4, 5]);
+  });
+});
+
+describe("resolveLastTurn — nuclear edge cases", () => {
+  it("two user messages, nuclear on the 2nd → removes iLastUser + after (previous prompt remains)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), user("u1"), asst("c1"), result("c1")];
+    expect(resolveLastTurn(msgs, { to_previous_prompt: true }).remove).toEqual([3, 4, 5]);
+  });
+
+  it("three user messages, nuclear → removes only the LAST user + after", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u3"), asst("c1"), result("c1"),
+      user("u5"), asst("c2"), result("c2"),
+    ];
+    expect(resolveLastTurn(msgs, { to_previous_prompt: true }).remove).toEqual([6, 7, 8]);
+  });
+
+  it("default is NEVER refused on a single-user list (keeps that user)", () => {
+    const msgs: MessageLike[] = [user("only"), asst("c"), result("c")];
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([1, 2]);
+  });
+});
+
+describe("resolveLastTurn — defensive (NEVER throws — spec/08 E13)", () => {
+  it("non-array messages → { remove: [] } (no throw)", () => {
+    expect(resolveLastTurn(null as unknown as MessageLike[], {})).toEqual({ remove: [] });
+    expect(resolveLastTurn(undefined as unknown as MessageLike[], {})).toEqual({ remove: [] });
+    expect(resolveLastTurn("nope" as unknown as MessageLike[], {})).toEqual({ remove: [] });
+  });
+
+  it("malformed opts (non-object / missing field) → treated as default (not nuclear)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), user("u1"), asst("c1"), result("c1")];
+    expect(resolveLastTurn(msgs, "bad" as unknown as { to_previous_prompt?: boolean }).remove).toEqual([4, 5]);
+    expect(resolveLastTurn(msgs, { to_previous_prompt: false }).remove).toEqual([4, 5]);
+  });
+
+  it("a throwing-Proxy user message is skipped (readOwn swallows) — no throw", () => {
+    const trap: MessageLike = new Proxy(
+      { role: "user", content: "boom" } as MessageLike,
+      new Proxy({}, { get() { throw new Error("trap"); } }),
+    );
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), trap];
+    expect(() => resolveLastTurn(msgs, {})).not.toThrow();
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([1, 2, 3]);
+  });
+
+  it("a throwing-Proxy mulligan message is removed (cannot confirm it is mulligan:*) — no throw, no crash", () => {
+    const trap: MessageLike = new Proxy(
+      { role: "custom", customType: "mulligan:note", content: "n" } as MessageLike,
+      new Proxy({}, { get() { throw new Error("trap"); } }),
+    );
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c"), trap];
+    expect(() => resolveLastTurn(msgs, {})).not.toThrow();
+    expect(resolveLastTurn(msgs, {}).remove).toEqual([1, 2, 3]);
+  });
+});
+
+describe("resolveLastTurn — purity, ordering, types", () => {
+  it("is pure / idempotent — same input → same output, no mutation", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), user("u1"), asst("c1"), result("c1")];
+    const a = resolveLastTurn(msgs, {});
+    const b = resolveLastTurn(msgs, {});
+    expect(a).toEqual(b);
+  });
+
+  it("remove is ASCENDING (deterministic) for the nuclear case", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c0"), result("c0"), user("u1"), asst("c1"), result("c1")];
+    const remove = resolveLastTurn(msgs, { to_previous_prompt: true }).remove;
+    const sorted = [...remove].sort((x, y) => x - y);
+    expect(remove).toEqual(sorted);
+  });
+
+  it("returns { remove: number[] } (the object wrapper, not a bare array or null)", () => {
+    expectTypeOf(resolveLastTurn([], {})).toEqualTypeOf<{ remove: number[] }>();
+    expectTypeOf(resolveLastTurn([], { to_previous_prompt: true })).toEqualTypeOf<{ remove: number[] }>();
+    expectTypeOf(resolveLastTurn([], undefined, "x")).toEqualTypeOf<{ remove: number[] }>();
+  });
+});
+
+// ── resolveCheckpoint (spec/06 §6) ────────────────────────────────────────────────────
+
+describe("resolveCheckpoint — spec/06 §6 + mapping + compaction-refuse + defensive + tail-exclusions", () => {
+  it("(clean) basic mapping — checkpoint mid-branch removes strictly-later work, keeps the point + before", () => {
+    const msgs: MessageLike[] = [user("u1"), asst("c1"), result("c1"), asstText("junk")];
+    const branchEntries: BranchEntry[] = [
+      entry("e1", "message"), entry("e2", "message"), labelEntry("eL", "e2", "ckpt"),
+      entry("e3", "message"), entry("e4", "message"),
+    ];
+    const res = resolveCheckpoint(msgs, branchEntries, "ckpt");
+    expect(res).not.toBeNull();
+    expect(res!.remove).toEqual([3]); // UNIT-SNAP: iTarget snapped 1→2 (unit [1,2]); only asstText idx3 removed
+  });
+
+  it("keeps the checkpoint point itself (iTarget never in remove) and everything before", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), entry("e_asst", "message"), labelEntry("eL", "e_asst", "p"),
+      entry("e_result", "message"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "p");
+    expect(res!.remove).toEqual([]); // UNIT-SNAP: iTarget 1→2; nothing > 2; asst+result both KEPT
+    expect(res!.remove).not.toContain(1);
+    expect(res!.remove).not.toContain(0);
+  });
+
+  it("UNIT-SNAP (BUG-003 secondary): a checkpoint on an assistant WITH tool calls keeps the WHOLE toolGroup", () => {
+    const msgs: MessageLike[] = [user("u1"), asst("c1"), result("c1"), asstText("junk")];
+    const branch: BranchEntry[] = [
+      entry("e1", "message"), entry("e2", "message"), labelEntry("eL", "e2", "ckpt"),
+      entry("e3", "message"), entry("e4", "message"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "ckpt");
+    expect(res).not.toBeNull();
+    expect(res!.remove).toEqual([3]);
+    expect(res!.remove).not.toContain(1); // asst(c1) KEPT
+    expect(res!.remove).not.toContain(2); // result(c1) KEPT — pairing preserved
+  });
+
+  it("UNIT-SNAP: a checkpoint on an assistant with MULTIPLE parallel results keeps the whole multi-result toolGroup", () => {
+    const msgs: MessageLike[] = [user("u"), asst("p1", "p2"), result("p1"), result("p2"), asstText("tail")];
+    const branch: BranchEntry[] = [
+      entry("eu", "message"), entry("ea", "message"), labelEntry("eL", "ea", "m"),
+      entry("er1", "message"), entry("er2", "message"), entry("et", "message"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "m");
+    expect(res!.remove).toEqual([4]);
+    expect(res!.remove).not.toContain(1);
+    expect(res!.remove).not.toContain(2);
+    expect(res!.remove).not.toContain(3); // both results survive
+  });
+
+  it("tail-exclusion: the rewind's own unit survives after iTarget", () => {
+    const msgs: MessageLike[] = [user("u"), asst("rw-call"), result("rw-call"), asstText("bad")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), labelEntry("eL", "e_user", "k"), entry("e_asst_rw", "message"),
+      entry("e_result", "message"), entry("e_text", "message"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "k", "rw-call");
+    expect(res!.remove).toEqual([3]); // asst(text) removed; own unit (idx1,2) KEPT
+    expect(res!.remove).not.toContain(1);
+    expect(res!.remove).not.toContain(2);
+  });
+
+  it("tail-exclusion: a mulligan:note / mulligan:nudge custom_message after iTarget survives", () => {
+    const msgs: MessageLike[] = [user("u"), result("c"), custom("mulligan:note"), custom("mulligan:nudge")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), labelEntry("eL", "e_user", "k"), entry("e_result", "message"),
+      entry("e_note", "custom_message"), entry("e_nudge", "custom_message"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "k");
+    expect(res!.remove).toEqual([1]); // only the result removed; note + nudge survive
+  });
+
+  it("compaction between root and checkpoint → REFUSE (null) — mapping indeterminate", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    const branch: BranchEntry[] = [
+      entry("e_comp", "compaction", { summary: "s", firstKeptEntryId: "e_user" }),
+      entry("e_user", "message"), entry("e_asst", "message"), labelEntry("eL", "e_asst", "k"),
+      entry("e_result", "message"),
+    ];
+    expect(resolveCheckpoint(msgs, branch, "k")).toBeNull();
+  });
+
+  it("compaction AFTER the checkpoint is not walked → mapping succeeds", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c"), asstText("post")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), entry("e_asst", "message"), labelEntry("eL", "e_asst", "k"),
+      entry("e_result", "message"), entry("e_post", "message"),
+      entry("e_comp", "compaction", { summary: "s", firstKeptEntryId: "e_result" }),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "k");
+    expect(res).not.toBeNull();
+    expect(res!.remove).toEqual([3]); // UNIT-SNAP: iTarget 1→2; only asstText idx3 removed
+  });
+
+  it("checkpoint not found on branch → null (spec/08 E10)", () => {
+    const branch: BranchEntry[] = [entry("e1", "message"), entry("e2", "message")];
+    expect(resolveCheckpoint([user("u")], branch, "nope")).toBeNull();
+  });
+
+  it("checkpoint targetId labels a NON-context-producing entry → filtered out → null", () => {
+    const branch: BranchEntry[] = [
+      labelEntry("eL", "e_marker", "k"), entry("e_marker", "custom", { customType: "mulligan:rewind", data: {} }),
+      entry("e_user", "message"),
+    ];
+    expect(resolveCheckpoint([user("u")], branch, "k")).toBeNull();
+  });
+
+  it("nothing after iTarget → { remove: [] } (determinable-but-empty, NOT null)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), entry("e_asst", "message"), labelEntry("eL", "e_asst", "k"),
+    ];
+    const res = resolveCheckpoint(msgs, branch, "k");
+    expect(res).not.toBeNull();
+    expect(res!.remove).toEqual([]);
+  });
+
+  it("defensive: non-array messages → null; non-array branchEntries → null; empty checkpointName → null", () => {
+    expect(resolveCheckpoint(null as unknown as MessageLike[], [], "k")).toBeNull();
+    expect(resolveCheckpoint([], null as unknown as BranchEntry[], "k")).toBeNull();
+    expect(resolveCheckpoint([], [], "")).toBeNull();
+    expect(resolveCheckpoint([], [], "   ")).toBeNull();
+  });
+
+  it("excludeToolCallId absent/empty/non-string → rewind's own unit NOT kept; note still survives", () => {
+    const msgs: MessageLike[] = [user("u"), asst("rw-call"), result("rw-call"), custom("mulligan:note")];
+    const branch: BranchEntry[] = [
+      entry("e_user", "message"), labelEntry("eL", "e_user", "k"), entry("e_asst", "message"),
+      entry("e_result", "message"), entry("e_note", "custom_message"),
+    ];
+    expect(resolveCheckpoint(msgs, branch, "k")!.remove).toEqual([1, 2]);
+    expect(resolveCheckpoint(msgs, branch, "k", "")!.remove).toEqual([1, 2]);
+  });
+
+  it("never throws on throwing-Proxy messages/entries (E13)", () => {
+    const throwingMsg = new Proxy({}, { get() { throw new Error("trap"); } });
+    const throwingEntry = new Proxy({}, { get() { throw new Error("trap"); } }) as unknown as BranchEntry;
+    expect(() => resolveCheckpoint([throwingMsg as unknown as MessageLike], [throwingEntry], "k")).not.toThrow();
+  });
+
+  it("returns { remove: number[] } | null (the exact union, never a bare array)", () => {
+    expectTypeOf(resolveCheckpoint([], [], "x")).toEqualTypeOf<{ remove: number[] } | null>();
+    const ok = resolveCheckpoint([user("u")], [labelEntry("eL", "e1", "x"), entry("e1", "message")], "x");
+    expectTypeOf(ok).toEqualTypeOf<{ remove: number[] } | null>();
   });
 });

@@ -194,14 +194,14 @@
               "id": "P1.M2.T5",
               "type": "Task",
               "title": "Transforms — resolvers (last_tool_call_group, last_turn, checkpoint)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement the three relative/absolute targeting resolvers. Relative granularities (default) avoid fragile positional indexing; checkpoint is the advanced absolute mode requiring entry→message mapping.",
               "subtasks": [
                 {
                   "id": "P1.M2.T5.S1",
                   "type": "Subtask",
                   "title": "resolveLastToolCallGroup + resolveLastTurn + resolveCheckpoint",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T4.S1"

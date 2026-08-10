@@ -183,3 +183,301 @@ function readOwn(obj: unknown, key: string): unknown {
     return undefined;
   }
 }
+
+// ── resolveLastToolCallGroup (last_tool_call_group targeting; spec/06 §5) ───────────────
+
+/**
+ * resolveLastToolCallGroup — find the indices of the LAST toolGroup unit eligible for removal
+ * (spec/06-context-filter.md §5). A helper for applyRewind (P1.M3.T4.S1) in `last_tool_call_group` granularity.
+ *
+ * ALGORITHM (spec/06 §5):
+ *   1. Walk `units` from the last to the first.
+ *   2. Skip plain units and malformed records — only toolGroups are candidates.
+ *   3. If `excludeToolCallId` is a non-empty string and the toolGroup's assistant issued that call, skip it
+ *      (the rewind's own toolGroup — spec/06 §9 / spec/08 E6).
+ *   4. The first non-skipped toolGroup from the end → return its indices.
+ *   5. No toolGroup found → null (nothing to rewind; applyRewind no-ops — spec/08 E8).
+ *
+ * RETURNS `number[] | null` — null = nothing to rewind; the indices array is a read-only reference into the
+ * unit's `.indices` (applyRewind copies, never mutates).
+ */
+export function resolveLastToolCallGroup(
+  units: Unit[],
+  messages: MessageLike[],
+  excludeToolCallId?: string,
+): number[] | null {
+  // Defensive: a non-array units (shouldn't happen) → nothing resolvable.
+  if (!Array.isArray(units)) return null;
+
+  const hasExclude = typeof excludeToolCallId === "string" && excludeToolCallId.length > 0;
+
+  // 1) Walk units from the last to the first.
+  for (let k = units.length - 1; k >= 0; k--) {
+    const unit = units[k];
+    // 2) Skip plain units (+ malformed records). Only toolGroups are candidates.
+    if (!isRecord(unit) || unit.kind !== "toolGroup" || !Array.isArray(unit.indices)) continue;
+
+    // 3) If exclusion is active, skip this toolGroup when its assistant issued the rewind's own call
+    //    (the rewind's own toolGroup, or a parallel-shared message — spec/06 §9 / spec/08 E6).
+    if (hasExclude && assistantIssuedCall(messages, unit.indices, excludeToolCallId)) {
+      continue;
+    }
+
+    // 4) First non-skipped toolGroup from the end → return its indices (read-only reference; applyRewind copies).
+    return unit.indices;
+  }
+
+  // 5) No toolGroup found → nothing to rewind (applyRewind no-ops; spec/08 E8).
+  return null;
+}
+
+/**
+ * Module-private: did the assistant message within this toolGroup issue a toolCall whose id === callId?
+ * Defensive (isRecord/readOwn; never throws). `indices` is a toolGroup's member indices (assistant + results).
+ * Scans ALL assistant members and ALL their toolCall blocks so a parallel-tool assistant (one message, several
+ * calls) is handled (spec/06 §9). Returns false if `messages` is malformed, no assistant is present, or no match.
+ */
+function assistantIssuedCall(
+  messages: MessageLike[] | unknown,
+  indices: number[],
+  callId: string,
+): boolean {
+  if (!Array.isArray(messages)) return false;
+  for (const i of indices) {
+    const msg = messages[i];
+    if (!isRecord(msg) || readOwn(msg, "role") !== "assistant") continue;
+    const content = readOwn(msg, "content");
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (!isRecord(block) || readOwn(block, "type") !== "toolCall") continue;
+      if (readOwn(block, "id") === callId) return true; // this assistant issued the excluded call
+    }
+  }
+  return false;
+}
+
+// ── resolveLastTurn (last_turn targeting; spec/06 §4) ─────────────────────────────────
+
+/**
+ * resolveLastTurn — find the removal set for a "last_turn" rewind (spec/06-context-filter.md §4).
+ *
+ * A TURN = a user message plus everything after it up to (not including) the next user message. The last turn
+ * begins at iLastUser = index of the last message with role "user".
+ *
+ * ALGORITHM (spec/06 §4, steps 1–3):
+ *   1. Find iLastUser = index of the last "user" message. If none → { remove: [] } (nothing to rewind).
+ *   2. DEFAULT (opts.to_previous_prompt !== true): KEEP the user message; remove every message AFTER iLastUser
+ *      EXCEPT (a) the rewind's OWN unit (assistant message that issued `excludeToolCallId` + its results via
+ *      partitionIntoUnits + assistantIssuedCall), and (b) any `mulligan:*` custom messages at the tail.
+ *   3. NUCLEAR (opts.to_previous_prompt === true): ALSO remove the user message at iLastUser (plus the same
+ *      after-iLastUser removal with the same exclusions). REFUSED when iLastUser is the FIRST user message
+ *      (iFirstUser === iLastUser) — would cross the protected first-user / original-task boundary (spec/06 §8,
+ *      spec/08 E3).
+ *
+ * RETURNS `{ remove: number[] }` (NOT number[] | null — empty array = no-op/refusal).
+ * `rw.options` carries `to_previous_prompt` (snake_case — the persisted marker field, spec/04 §3);
+ * this function reads it VERBATIM (D1).
+ *
+ * Pure + defensive: a non-array `messages` → { remove: [] }; malformed messages, throwing-Proxy messages, a
+ * non-string/empty `excludeToolCallId`, and malformed `opts` are all handled gracefully — NEVER throws (E13).
+ */
+export function resolveLastTurn(
+  messages: MessageLike[],
+  opts: { to_previous_prompt?: boolean } | undefined,
+  excludeToolCallId?: string,
+): { remove: number[] } {
+  // Defensive: a non-array messages (shouldn't happen) → nothing to rewind.
+  if (!Array.isArray(messages)) return { remove: [] };
+
+  // 1) iLastUser = index of the LAST "user" message.
+  let iLastUser = -1;
+  for (let i = 0; i < messages.length; i++) {
+    if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") iLastUser = i;
+  }
+  if (iLastUser === -1) return { remove: [] }; // no user message → nothing to rewind (protected)
+
+  const nuclear = opts !== undefined && opts.to_previous_prompt === true;
+
+  // 3) Nuclear protected check: refuse if iLastUser is the FIRST user message (would cross the original-task line).
+  if (nuclear) {
+    let iFirstUser = -1;
+    for (let i = 0; i < messages.length; i++) {
+      if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") {
+        iFirstUser = i;
+        break;
+      }
+    }
+    if (iFirstUser === iLastUser) return { remove: [] }; // nuclear refused (spec/06 §8, spec/08 E3)
+  }
+
+  // 2) rewindOwnIndices = the set of message indices in the rewind's OWN unit (kept whole). Only when
+  //    excludeToolCallId is a non-empty string; the unit is found via partitionIntoUnits + assistantIssuedCall.
+  const rewindOwnIndices = new Set<number>();
+  const hasExclude = typeof excludeToolCallId === "string" && excludeToolCallId.length > 0;
+  if (hasExclude) {
+    const units = partitionIntoUnits(messages);
+    for (const unit of units) {
+      if (unit.kind === "toolGroup" && assistantIssuedCall(messages, unit.indices, excludeToolCallId)) {
+        for (const idx of unit.indices) rewindOwnIndices.add(idx); // keep the WHOLE unit (parallel-safe — §9)
+      }
+    }
+  }
+
+  // 4) Build the removal set, ASCENDING. Nuclear removes iLastUser too; then every index > iLastUser
+  //    except the rewind's own unit and mulligan:* custom messages.
+  const remove: number[] = [];
+  if (nuclear) remove.push(iLastUser);
+  for (let j = iLastUser + 1; j < messages.length; j++) {
+    if (rewindOwnIndices.has(j)) continue; // the rewind's own assistant + results survive
+    if (isMulliganCustomMessage(messages[j])) continue; // the note / nudge survives
+    remove.push(j);
+  }
+  return { remove };
+}
+
+/**
+ * Module-private: is this message a `mulligan:*` custom message (the note / nudge that MUST survive a rewind)?
+ * Detected by a `customType` string with the `mulligan:` prefix. Defensive (isRecord/readOwn; never throws).
+ */
+function isMulliganCustomMessage(msg: unknown): boolean {
+  if (!isRecord(msg)) return false;
+  const customType = readOwn(msg, "customType");
+  return typeof customType === "string" && customType.startsWith("mulligan:");
+}
+
+// ── resolveCheckpoint (checkpoint targeting — entry→message mapping; spec/06 §6) ─────────
+
+/**
+ * Minimal structural SessionEntry-like type for resolveCheckpoint's branchEntries param. A real Pi SessionEntry[]
+ * from getBranch() assigns in with NO cast — structural typing. EXPORTED so tests build typed fixtures.
+ */
+export interface BranchEntry {
+  type: string; // "message" | "custom_message" | "compaction" | "branch_summary" | "label" | "custom" | ...
+  id: string;
+  parentId?: string | null;
+  timestamp?: string;
+  /** LabelEntry only — the entry this label points at (the checkpointed entry). */
+  targetId?: string;
+  /** LabelEntry only — the label string, e.g. "mulligan:checkpoint:before-x". */
+  label?: string;
+  [key: string]: unknown; // message/customType/summary/firstKeptEntryId/... read defensively via readOwn
+}
+
+/**
+ * resolveCheckpoint — map a named `mulligan:checkpoint:<name>` Pi LabelEntry to a message index, then compute
+ * the removal set for a `checkpoint` rewind (spec/06-context-filter.md §6).
+ *
+ * ALGORITHM (spec/06 §6, steps 1–6):
+ *   1. Defensive: non-array messages/branchEntries, or checkpointName not a non-empty string → null.
+ *   2. Find the FIRST LabelEntry (scanning branchEntries in REVERSE / leaf→root) whose label ===
+ *      `mulligan:checkpoint:${checkpointName}`. None → null. targetId = its targetId; non-string/empty → null.
+ *   3. ctxEntries = branchEntries (root→leaf) filtered to context-producing types (message, custom_message,
+ *      branch_summary, compaction — spec/06 §6 step 2).
+ *   4. Walk ctxEntries with msgCursor. For each entry: yield = entryMessageYield(entry);
+ *      yield < 0 (compaction/unknown → indeterminate) OR msgCursor+yield > messages.length → null.
+ *      If entry.id === targetId → iTarget = msgCursor + yield - 1; break.
+ *      Else msgCursor += yield. Loop end without match → null.
+ *   4b. UNIT-SNAP: partitionIntoUnits(messages); if iTarget is inside a toolGroup, advance to the unit's MAX index
+ *      so the assistant + ALL its toolResults are KEPT (never orphan — spec/06 §2, api_verification §6.4).
+ *   5. remove (ascending): for j from (unit-snapped) iTarget+1..end, skip if rewindOwnIndices.has(j) or
+ *      isMulliganCustomMessage(messages[j]). Else push.
+ *   6. Return { remove }.
+ *
+ * COMPACTION: entryMessageYield returns -1 for compaction → this function returns null (refuse safely, never guess).
+ *
+ * RETURNS `{ remove: number[] } | null` — null = indeterminate/refuse; { remove: [] } = determinable-but-empty.
+ */
+export function resolveCheckpoint(
+  messages: MessageLike[],
+  branchEntries: BranchEntry[],
+  checkpointName: string,
+  excludeToolCallId?: string,
+): { remove: number[] } | null {
+  // 1) Defensive: arrays + a non-empty checkpoint name.
+  if (!Array.isArray(messages) || !Array.isArray(branchEntries)) return null;
+  if (typeof checkpointName !== "string" || checkpointName.length === 0) return null;
+
+  const needle = `mulligan:checkpoint:${checkpointName}`;
+
+  // 2) Find the FIRST (most-recent) LabelEntry with the matching label. branchEntries is ROOT→LEAF,
+  //    so scan from the END (leaf→root) so the most-recent (leaf-most) match wins.
+  let targetId: string | undefined;
+  for (let i = branchEntries.length - 1; i >= 0; i--) {
+    const e = branchEntries[i];
+    if (!isRecord(e)) continue;
+    if (readOwn(e, "type") !== "label") continue;
+    if (readOwn(e, "label") !== needle) continue;
+    const tid = readOwn(e, "targetId");
+    if (typeof tid === "string" && tid.length > 0) {
+      targetId = tid;
+      break; // most-recent (leaf-most) match wins
+    }
+  }
+  if (targetId === undefined) return null; // not found on this branch (spec/08 E10) → refuse
+
+  // 3) ctxEntries = branchEntries (root→leaf) filtered to context-producing types.
+  const ctxEntries = branchEntries.filter((e) =>
+    isContextProducingType(isRecord(e) ? readOwn(e, "type") : undefined),
+  );
+
+  // 4) Walk in parallel with messages; stop at the target entry → iTarget = its last message index.
+  let msgCursor = 0;
+  let iTarget = -1;
+  let found = false;
+  for (const e of ctxEntries) {
+    const y = entryMessageYield(e); // 1 for message/custom_message/branch_summary; -1 for compaction/unknown
+    if (y < 0) return null; // compaction (or unknown) on the walked range → mapping indeterminate → refuse
+    if (msgCursor + y > messages.length) return null; // alignment lost → refuse
+    if (isRecord(e) && readOwn(e, "id") === targetId) {
+      iTarget = msgCursor + y - 1; // the entry's LAST message index — KEPT
+      found = true;
+      break;
+    }
+    msgCursor += y;
+  }
+  if (!found) return null; // targetId labels a non-context-producing entry → refuse
+
+  // 4b) UNIT-SNAP (BUG-003 secondary / spec/06 §2): if iTarget is inside a toolGroup unit, snap to the unit's MAX
+  //     index so the entire unit (assistant + all results) is KEPT and remove begins strictly after it.
+  const units = partitionIntoUnits(messages);
+  for (const unit of units) {
+    if (unit.indices.includes(iTarget)) {
+      iTarget = Math.max(...unit.indices);
+      break;
+    }
+  }
+
+  // 5) remove = indices > iTarget, EXCEPT the rewind's own unit + mulligan:* notes (IDENTICAL to resolveLastTurn).
+  const rewindOwnIndices = new Set<number>();
+  const hasExclude = typeof excludeToolCallId === "string" && excludeToolCallId.length > 0;
+  if (hasExclude) {
+    for (const unit of units) {
+      if (unit.kind === "toolGroup" && assistantIssuedCall(messages, unit.indices, excludeToolCallId)) {
+        for (const idx of unit.indices) rewindOwnIndices.add(idx); // keep the WHOLE unit (parallel-safe — §9)
+      }
+    }
+  }
+  const remove: number[] = [];
+  for (let j = iTarget + 1; j < messages.length; j++) {
+    if (rewindOwnIndices.has(j)) continue; // the rewind's own assistant + results survive
+    if (isMulliganCustomMessage(messages[j])) continue; // the note / nudge survives
+    remove.push(j);
+  }
+  return { remove };
+}
+
+/**
+ * Module-private: how many LLM messages does this branch entry produce? message/custom_message/branch_summary → 1;
+ * compaction → -1 (indeterminate; raw getBranch misaligns with compaction-aware messages → caller refuses).
+ * Non-context-producing types also return -1. Defensive (isRecord/readOwn; never throws).
+ */
+function entryMessageYield(entry: unknown): number {
+  const type = isRecord(entry) ? readOwn(entry, "type") : undefined;
+  if (type === "message" || type === "custom_message" || type === "branch_summary") return 1;
+  return -1; // compaction (indeterminate) OR unknown/non-context-producing → caller refuses
+}
+
+/** Module-private: is this entry type one that produces a context message (spec/06 §6 step 2 list)? */
+function isContextProducingType(type: unknown): boolean {
+  return type === "message" || type === "custom_message" || type === "branch_summary" || type === "compaction";
+}
