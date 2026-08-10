@@ -26,6 +26,7 @@
 
 import type { ContextEvent, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { RewindMarker, ShrinkMarker, TurnMetric } from "./markers.js";
+import { shouldNudge, injectNudge, suppressCheck } from "./nudges.js";
 import { filterPipeline, type BranchEntry } from "./transforms.js";
 import { getConfig } from "./config.js";
 import { runtime } from "./runtime.js";
@@ -183,11 +184,18 @@ export function contextHandler(
 
     const messages = filterPipeline(event.messages as unknown as import("./transforms.js").MessageLike[], markers, config, branchEntries);
 
+    // Nudge B Phase 2: inject ephemeral drift nudge after filterPipeline, before cache write.
+    const metric = markers.metric;
+    let finalMessages = messages;
+    if (config.nudges.perTurnDrift && metric && shouldNudge(metric, config) && !suppressCheck(metric, markers)) {
+      finalMessages = injectNudge(messages, metric);
+    }
+
     // Cache for mulligan_audit (spec/06 §7)
-    rt.lastFiltered = messages;
+    rt.lastFiltered = finalMessages;
     rt.lastFilterTs = Date.now();
 
-    return { messages: messages as unknown as ContextMessage[] };
+    return { messages: finalMessages as unknown as ContextMessage[] };
   } catch (e) {
     // Fail-open pass-through (E13): log and return undefined — never break the agent turn
     logError("filter.fire", sessionId, {

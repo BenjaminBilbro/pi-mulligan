@@ -4,7 +4,7 @@
       "id": "P1",
       "type": "Phase",
       "title": "pi-mulligan v1.0 — Autonomous Agent Context Control",
-      "status": "Researching",
+      "status": "Planned",
       "description": "Ship the complete pi-mulligan Pi extension as specified: one mechanism (persisted markers driving a context-event view transform), four agent-callable tools (rewind, shrink, checkpoint, audit), and two zero-extra-request nudges (bloated-result reminder + per-turn drift). The agent gains autonomous, token-cheap control over its own context window. Feasibility is pre-proven (spec/02 spike) and a complete reference implementation exists in the sibling main worktree as a read-only oracle (see architecture/system_context.md §3). v1 is a single cohesive MVP; build order mirrors spec/11.",
       "milestones": [
         {
@@ -238,7 +238,7 @@
           "id": "P1.M3",
           "type": "Milestone",
           "title": "Pi Integration Layer (thin glue, integration-tested)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Wire the pure core to Pi: marker persistence wrappers (the only write path), the context-event filter (the heart), and the two nudges. All Pi-coupled code is thin and fail-open; correctness lives in the pure core.",
           "tasks": [
             {
@@ -290,14 +290,14 @@
               "id": "P1.M3.T3",
               "type": "Task",
               "title": "Nudges — bloated-result reminder + per-turn drift (nudges.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Two zero-extra-request ride-along nudges. Nudge A: a tool_result handler appends a reminder to bloated results. Nudge B: turn_end records a turn-metric; the filter injects an ephemeral (never-persisted) drift annotation on the next inference. Both driven by pure render/decision helpers. This task EXTENDS filter.ts (P1.M3.T2) with nudge injection per architecture/external_deps.md §3.1.",
               "subtasks": [
                 {
                   "id": "P1.M3.T3.S1",
                   "type": "Subtask",
                   "title": "tool_result annotator (Nudge A) + turn_end metric (Phase 1) + shouldNudge/injectNudge (Phase 2)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T2.S1",

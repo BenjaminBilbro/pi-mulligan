@@ -7,7 +7,7 @@
  *
  * Foundation-tier module: imports NOTHING (not Pi, not config.ts, not log.ts).
  * Downstream consumers: markers.ts (stamps seq), filter.ts (writes lastFiltered/lastFilterTs),
- *   nudges.ts (reads/writes tokenBaseline/lastTurnIndex), tools/audit.ts (reads lastFiltered).
+ *   nudges.ts (reads/writes tokenBaseline/lastTurnIndex/pendingBloatHits), tools/audit.ts (reads lastFiltered).
  */
 
 /**
@@ -34,6 +34,9 @@ export interface SessionRuntime {
   lastFiltered: AgentMessage[] | null;
   /** Timestamp (Date.now()) when lastFiltered was last written. Null until the first filter fire. */
   lastFilterTs: number | null;
+  /** Accumulated bloated tool-result hits this turn (nudges.ts bloatReminderHandler pushes;
+ *   turnEndMetricHandler reads+clears). Empty array between turns. */
+  pendingBloatHits: { toolName: string; approxTokens: number }[];
 }
 
 /**
@@ -54,6 +57,7 @@ function freshRuntime(sessionId: string): SessionRuntime {
     lastTurnIndex: null,
     lastFiltered: null,
     lastFilterTs: null,
+    pendingBloatHits: [],
   };
 }
 

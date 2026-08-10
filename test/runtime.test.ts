@@ -23,10 +23,11 @@ const EXPECTED_KEYS = [
   "lastTurnIndex",
   "lastFiltered",
   "lastFilterTs",
+  "pendingBloatHits",
 ] as const;
 
 describe("SessionRuntime shape (spec/04 §8 + spec/06 §7)", () => {
-  it("fresh runtime has EXACTLY the 6 fields with correct defaults", () => {
+  it("fresh runtime has EXACTLY the 7 fields with correct defaults", () => {
     const rt = runtime("shape-test");
     expect(Object.keys(rt).sort()).toEqual([...EXPECTED_KEYS].sort());
     expect(rt).toEqual({
@@ -36,6 +37,7 @@ describe("SessionRuntime shape (spec/04 §8 + spec/06 §7)", () => {
       lastTurnIndex: null,
       lastFiltered: null,
       lastFilterTs: null,
+      pendingBloatHits: [],
     });
   });
 
@@ -52,10 +54,11 @@ describe("SessionRuntime shape (spec/04 §8 + spec/06 §7)", () => {
     expectTypeOf<AgentMessage>().toEqualTypeOf<Record<string, unknown>>();
   });
 
-  it("has NO pendingBloatHits key (out of scope — P1.M3.T3)", () => {
+  it("has pendingBloatHits key (added by P1.M3.T3)", () => {
     const rt = runtime("no-bloat");
-    expect(rt).not.toHaveProperty("pendingBloatHits");
-    expect(Object.keys(rt)).toHaveLength(6);
+    expect(rt).toHaveProperty("pendingBloatHits");
+    expect(rt.pendingBloatHits).toEqual([]);
+    expect(Object.keys(rt)).toHaveLength(7);
   });
 });
 
