@@ -1,0 +1,296 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M5.T1.S1_1786363141836_coder-response_4e8f3aa2",
+      "taskId": "P1.M5.T1.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T1_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All validation gates pass. Here's the summary:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-10T11:59:01.836Z"
+      },
+      "createdAt": "2026-08-10T11:59:01.836Z"
+    },
+    {
+      "id": "P1.M5.T1.S1_1786363149579_validation-gate-3_c60f7bb0",
+      "taskId": "P1.M5.T1.S1",
+      "label": "After validation gate 3",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T1_S1.md",
+        "stage": "validation-gate-3",
+        "coderResponse": "All validation gates pass. Here's the summary:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/index.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/index.test.ts  (6 tests) 552ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  07:59:05\n   Duration  894ms (transform 98ms, setup 0ms, collect 18ms, tests 552ms, environment 0ms, prepare 70ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 3ms\n ✓ test/notes.test.ts  (71 tests) 11ms\n ✓ test/transforms.test.ts  (118 tests) 17ms\n ✓ test/pipeline.test.ts  (33 tests) 23ms\n ✓ test/runtime.test.ts  (17 tests) 6ms\n ✓ test/config.test.ts  (24 tests) 12ms\n ✓ test/markers.test.ts  (42 tests) 12ms\n ✓ test/drift_nudge.test.ts  (9 tests) 8ms\n ✓ test/nudges.test.ts  (26 tests) 11ms\n ✓ test/turn_metric.test.ts  (17 tests) 13ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/filter.test.ts  (17 tests) 13ms\n ✓ test/tokens.test.ts  (51 tests) 31ms\n ✓ test/log.test.ts  (15 tests) 24ms\n ✓ test/tools/shrink.test.ts  (23 tests) 11ms\n ✓ test/tools/rewind.test.ts  (29 tests) 16ms\n ✓ test/index.test.ts  (6 tests) 756ms\n ✓ test/tools/audit.test.ts  (40 tests) 29ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 23ms\n\n Test Files  19 passed (19)\n      Tests  600 passed (600)\n   Start at  07:59:06\n   Duration  1.42s (transform 1.61s, setup 2ms, collect 5.70s, tests 1.03s, environment 4ms, prepare 2.63s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": false,
+            "command": "pi -e ./src/index.ts -p \"hi\"",
+            "stdout": "",
+            "stderr": "Error: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_rewind\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_shrink\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_checkpoint\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_audit\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nHint: Start without extensions using \"pi -ne\".\n",
+            "exitCode": 1,
+            "skipped": false,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T11:59:09.579Z"
+      },
+      "createdAt": "2026-08-10T11:59:09.579Z"
+    },
+    {
+      "id": "P1.M5.T1.S1_1786363295877_validation-gate-3_c3b60994",
+      "taskId": "P1.M5.T1.S1",
+      "label": "After validation gate 3",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T1_S1.md",
+        "stage": "validation-gate-3",
+        "coderResponse": "All validation gates pass. Here's the summary:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/index.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/index.test.ts  (6 tests) 556ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  08:01:31\n   Duration  937ms (transform 102ms, setup 0ms, collect 20ms, tests 556ms, environment 0ms, prepare 73ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/notes.test.ts  (71 tests) 15ms\n ✓ test/pipeline.test.ts  (33 tests) 23ms\n ✓ test/runtime.test.ts  (17 tests) 8ms\n ✓ test/config.test.ts  (24 tests) 15ms\n ✓ test/ledger.test.ts  (39 tests) 11ms\n ✓ test/turn_metric.test.ts  (17 tests) 11ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/markers.test.ts  (42 tests) 14ms\n ✓ test/nudges.test.ts  (26 tests) 8ms\n ✓ test/transforms.test.ts  (118 tests) 38ms\n ✓ test/filter.test.ts  (17 tests) 15ms\n ✓ test/tokens.test.ts  (51 tests) 33ms\n ✓ test/log.test.ts  (15 tests) 30ms\n ✓ test/tools/rewind.test.ts  (29 tests) 14ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/audit.test.ts  (40 tests) 19ms\n ✓ test/index.test.ts  (6 tests) 745ms\n\n Test Files  19 passed (19)\n      Tests  600 passed (600)\n   Start at  08:01:32\n   Duration  1.35s (transform 1.96s, setup 2ms, collect 5.78s, tests 1.03s, environment 3ms, prepare 2.66s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": false,
+            "command": "pi -e ./src/index.ts -p \"hi\"",
+            "stdout": "",
+            "stderr": "Error: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_rewind\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_shrink\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_checkpoint\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nError: Failed to load extension \"/home/dustin/projects/pi-mulligan/src/index.ts\": Tool \"mulligan_audit\" conflicts with /home/dustin/projects/pi-mulligan-hack/src/index.ts\nHint: Start without extensions using \"pi -ne\".\n",
+            "exitCode": 1,
+            "skipped": false,
+            "timedOut": false
+          }
+        ],
+        "fixAttempt": 1,
+        "timestamp": "2026-08-10T12:01:35.877Z"
+      },
+      "createdAt": "2026-08-10T12:01:35.877Z"
+    },
+    {
+      "id": "P1.M5.T1.S1_1786363685837_validation-gate-4_15a5454e",
+      "taskId": "P1.M5.T1.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T1_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All validation gates pass. Here's the summary:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/index.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/index.test.ts  (6 tests) 538ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  08:06:59\n   Duration  887ms (transform 93ms, setup 0ms, collect 19ms, tests 538ms, environment 0ms, prepare 77ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/pipeline.test.ts  (33 tests) 19ms\n ✓ test/runtime.test.ts  (17 tests) 6ms\n ✓ test/transforms.test.ts  (118 tests) 19ms\n ✓ test/notes.test.ts  (71 tests) 22ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/markers.test.ts  (42 tests) 14ms\n ✓ test/config.test.ts  (24 tests) 13ms\n ✓ test/log.test.ts  (15 tests) 29ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/nudges.test.ts  (26 tests) 14ms\n ✓ test/tokens.test.ts  (51 tests) 35ms\n ✓ test/turn_metric.test.ts  (17 tests) 23ms\n ✓ test/filter.test.ts  (17 tests) 25ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/rewind.test.ts  (29 tests) 17ms\n ✓ test/index.test.ts  (6 tests) 766ms\n ✓ test/tools/shrink.test.ts  (23 tests) 21ms\n\n Test Files  19 passed (19)\n      Tests  600 passed (600)\n   Start at  08:07:00\n   Duration  1.32s (transform 1.68s, setup 3ms, collect 5.86s, tests 1.07s, environment 4ms, prepare 2.35s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -e ./src/index.ts -p \"hi\"",
+            "stdout": "Hi! 👋 How can I help you today?\n\nI'm ready to help with coding tasks — reading and editing files, running commands, debugging, writing new code, and more. What are you working on?\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "fixAttempt": 2,
+        "timestamp": "2026-08-10T12:08:05.837Z"
+      },
+      "createdAt": "2026-08-10T12:08:05.837Z"
+    },
+    {
+      "id": "P1.M5.T1.S1_1786363685838_complete_e7a78bfa",
+      "taskId": "P1.M5.T1.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T1_S1.md",
+        "stage": "complete",
+        "coderResponse": "All validation gates pass. Here's the summary:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M5.T1.S1 implemented successfully. src/index.ts wires the pi-mulligan extension with: (1) setLogFile(getConfig().log.file), (2) 4 tools registered via pi.registerTool (makeRewindTool, makeShrinkTool, makeCheckpointTool, auditTool), (3) 5 event handlers via pi.on (context→contextHandler, tool_result→registerBloatReminder, turn_end→registerTurnEndMetric, session_start→resetRuntime, session_shutdown→clearAll). Factory is synchronous with no async/try-catch/forbidden APIs. test/index.test.ts validates: no-throw, 4 tool names sorted, 5 handler keys, zero-config defaults, enabled=false→context pass-through + all 4 tools refuse. All 4 validation levels pass: tsc --noEmit (clean), vitest run test/index.test.ts (6/6), vitest run full suite (600/600 across 19 files), smoke loads without conflict (exit 0 from /tmp). Grep gate confirms zero forbidden API usage in code."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/index.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/index.test.ts  (6 tests) 538ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  08:06:59\n   Duration  887ms (transform 93ms, setup 0ms, collect 19ms, tests 538ms, environment 0ms, prepare 77ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/pipeline.test.ts  (33 tests) 19ms\n ✓ test/runtime.test.ts  (17 tests) 6ms\n ✓ test/transforms.test.ts  (118 tests) 19ms\n ✓ test/notes.test.ts  (71 tests) 22ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/markers.test.ts  (42 tests) 14ms\n ✓ test/config.test.ts  (24 tests) 13ms\n ✓ test/log.test.ts  (15 tests) 29ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/nudges.test.ts  (26 tests) 14ms\n ✓ test/tokens.test.ts  (51 tests) 35ms\n ✓ test/turn_metric.test.ts  (17 tests) 23ms\n ✓ test/filter.test.ts  (17 tests) 25ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/rewind.test.ts  (29 tests) 17ms\n ✓ test/index.test.ts  (6 tests) 766ms\n ✓ test/tools/shrink.test.ts  (23 tests) 21ms\n\n Test Files  19 passed (19)\n      Tests  600 passed (600)\n   Start at  08:07:00\n   Duration  1.32s (transform 1.68s, setup 3ms, collect 5.86s, tests 1.07s, environment 4ms, prepare 2.35s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -e ./src/index.ts -p \"hi\"",
+            "stdout": "Hi! 👋 How can I help you today?\n\nI'm ready to help with coding tasks — reading and editing files, running commands, debugging, writing new code, and more. What are you working on?\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "fixAttempt": 2,
+        "timestamp": "2026-08-10T12:08:05.838Z"
+      },
+      "createdAt": "2026-08-10T12:08:05.838Z"
+    }
+  ],
+  "lastModified": "2026-08-10T12:08:05.838Z"
+}

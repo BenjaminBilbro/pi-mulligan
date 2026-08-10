@@ -422,14 +422,14 @@
               "id": "P1.M5.T1",
               "type": "Task",
               "title": "Extension factory wiring (index.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Register the 4 tools, attach the 4 handlers (session_start, context, tool_result, turn_end), wire config + runtime init. Confirm zero-config works out of the box (all defaults).",
               "subtasks": [
                 {
                   "id": "P1.M5.T1.S1",
                   "type": "Subtask",
                   "title": "Wire tools + handlers + config + runtime in the default factory",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M4.T1.S1",

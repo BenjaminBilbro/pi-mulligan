@@ -1,5 +1,5 @@
 {
-  "name": "pi-mulligan",
+  "name": "pi-mulligan-hack",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",
@@ -19,6 +19,6 @@
   },
   "scripts": {
     "test": "vitest run",
-    "smoke": "pi -e ./src/index.ts -p \"hi\""
+    "smoke": "pi -ne -e ./src/index.ts -p \"hi\""
   }
 }
