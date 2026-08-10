@@ -369,14 +369,14 @@
               "id": "P1.M4.T3",
               "type": "Task",
               "title": "mulligan_checkpoint tool (tools/checkpoint.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Tags the current leaf with a `mulligan:checkpoint:<name>` label so a later rewind can target it. Trivial — wraps setCheckpoint.",
               "subtasks": [
                 {
                   "id": "P1.M4.T3.S1",
                   "type": "Subtask",
                   "title": "mulligan_checkpoint execute(): validate name → setCheckpoint",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M3.T1.S1"
