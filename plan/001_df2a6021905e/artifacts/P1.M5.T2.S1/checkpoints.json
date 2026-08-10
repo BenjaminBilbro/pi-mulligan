@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M5.T2.S1_1786364390194_pre-execution_25bcff11",
+      "taskId": "P1.M5.T2.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T2_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-10T12:19:50.194Z"
+      },
+      "createdAt": "2026-08-10T12:19:50.194Z"
+    },
+    {
+      "id": "P1.M5.T2.S1_1786365013759_coder-response_e7a275ec",
+      "taskId": "P1.M5.T2.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T2_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "Everything is in order. Let me produce the final result.\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"All deliverables implemented and all validation gates pass.\\n\\n## Deliverables Created\\n\\n1. **test/edge-cases.test.ts** (35 tests, all green):\\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\\n   - E1: orphan toolResult → plain unit, survives rewind\\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\\n   - E4: maxDepth exceeded → tool refuses with count\\n   - E5: side-effect span → VERBATIM mutation warning\\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\\n   - E8: marker targets nothing → no-op, idempotent\\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\\n   - E10: checkpoint invalid name/not found → refusal\\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\\n   - E12: getContextUsage undefined → audit tolerates\\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\\n   - E16: audit before inference → fallback, confidence 'low'\\n   - E17: two shrinks same target → last wins\\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\\n   - E19: shrink non-toolResult → role preserved\\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\\n\\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\\n   - Robust beforeAll: pi version check, graceful skip if unavailable\\n\\n## Validation Results\\n- Level 1 (tsc --noEmit): ✅ zero errors\\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\\n\\n## README Limitation Text (VERBATIM for P1.M5.T4)\\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "All deliverables implemented and all validation gates pass.\n\n## Deliverables Created\n\n1. **test/edge-cases.test.ts** (35 tests, all green):\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\n   - E1: orphan toolResult → plain unit, survives rewind\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\n   - E4: maxDepth exceeded → tool refuses with count\n   - E5: side-effect span → VERBATIM mutation warning\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\n   - E8: marker targets nothing → no-op, idempotent\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\n   - E10: checkpoint invalid name/not found → refusal\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\n   - E12: getContextUsage undefined → audit tolerates\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\n   - E16: audit before inference → fallback, confidence 'low'\n   - E17: two shrinks same target → last wins\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\n   - E19: shrink non-toolResult → role preserved\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\n\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\n   - Robust beforeAll: pi version check, graceful skip if unavailable\n\n## Validation Results\n- Level 1 (tsc --noEmit): ✅ zero errors\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\n\n## README Limitation Text (VERBATIM for P1.M5.T4)\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-10T12:30:13.759Z"
+      },
+      "createdAt": "2026-08-10T12:30:13.759Z"
+    },
+    {
+      "id": "P1.M5.T2.S1_1786365068843_validation-gate-4_39b5c1c2",
+      "taskId": "P1.M5.T2.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T2_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "Everything is in order. Let me produce the final result.\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"All deliverables implemented and all validation gates pass.\\n\\n## Deliverables Created\\n\\n1. **test/edge-cases.test.ts** (35 tests, all green):\\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\\n   - E1: orphan toolResult → plain unit, survives rewind\\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\\n   - E4: maxDepth exceeded → tool refuses with count\\n   - E5: side-effect span → VERBATIM mutation warning\\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\\n   - E8: marker targets nothing → no-op, idempotent\\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\\n   - E10: checkpoint invalid name/not found → refusal\\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\\n   - E12: getContextUsage undefined → audit tolerates\\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\\n   - E16: audit before inference → fallback, confidence 'low'\\n   - E17: two shrinks same target → last wins\\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\\n   - E19: shrink non-toolResult → role preserved\\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\\n\\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\\n   - Robust beforeAll: pi version check, graceful skip if unavailable\\n\\n## Validation Results\\n- Level 1 (tsc --noEmit): ✅ zero errors\\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\\n\\n## README Limitation Text (VERBATIM for P1.M5.T4)\\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "All deliverables implemented and all validation gates pass.\n\n## Deliverables Created\n\n1. **test/edge-cases.test.ts** (35 tests, all green):\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\n   - E1: orphan toolResult → plain unit, survives rewind\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\n   - E4: maxDepth exceeded → tool refuses with count\n   - E5: side-effect span → VERBATIM mutation warning\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\n   - E8: marker targets nothing → no-op, idempotent\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\n   - E10: checkpoint invalid name/not found → refusal\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\n   - E12: getContextUsage undefined → audit tolerates\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\n   - E16: audit before inference → fallback, confidence 'low'\n   - E17: two shrinks same target → last wins\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\n   - E19: shrink non-toolResult → role preserved\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\n\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\n   - Robust beforeAll: pi version check, graceful skip if unavailable\n\n## Validation Results\n- Level 1 (tsc --noEmit): ✅ zero errors\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\n\n## README Limitation Text (VERBATIM for P1.M5.T4)\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/edge-cases.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n\n Test Files  1 passed (1)\n      Tests  35 passed (35)\n   Start at  08:30:16\n   Duration  856ms (transform 91ms, setup 0ms, collect 509ms, tests 20ms, environment 0ms, prepare 138ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 13ms\n ✓ test/runtime.test.ts  (17 tests) 12ms\n ✓ test/nudges.test.ts  (26 tests) 6ms\n ✓ test/config.test.ts  (24 tests) 17ms\n ✓ test/ledger.test.ts  (39 tests) 18ms\n ✓ test/transforms.test.ts  (118 tests) 29ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/pipeline.test.ts  (33 tests) 33ms\n ✓ test/turn_metric.test.ts  (17 tests) 16ms\n ✓ test/markers.test.ts  (42 tests) 21ms\n ✓ test/log.test.ts  (15 tests) 31ms\n ✓ test/tokens.test.ts  (51 tests) 43ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/shrink.test.ts  (23 tests) 9ms\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n ✓ test/index.test.ts  (6 tests) 772ms\n ✓ test/tools/rewind.test.ts  (29 tests) 13ms\n\n Test Files  20 passed | 1 skipped (21)\n      Tests  635 passed | 2 skipped (637)\n   Start at  08:30:18\n   Duration  1.33s (transform 1.83s, setup 2ms, collect 6.51s, tests 1.10s, environment 3ms, prepare 2.82s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "RUN_INTEGRATION=1 npx vitest run test/integration/edge-cases.integration.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\nstdout | test/integration/edge-cases.integration.test.ts > edge-case integration (real pi -p)\n[integration] pi --version: 0.84.1\n\n ✓ test/integration/edge-cases.integration.test.ts  (2 tests) 48430ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  08:30:19\n   Duration  48.77s (transform 26ms, setup 0ms, collect 18ms, tests 48.43s, environment 0ms, prepare 177ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T12:31:08.843Z"
+      },
+      "createdAt": "2026-08-10T12:31:08.843Z"
+    },
+    {
+      "id": "P1.M5.T2.S1_1786365068845_complete_cd7a0bc3",
+      "taskId": "P1.M5.T2.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T2_S1.md",
+        "stage": "complete",
+        "coderResponse": "Everything is in order. Let me produce the final result.\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"All deliverables implemented and all validation gates pass.\\n\\n## Deliverables Created\\n\\n1. **test/edge-cases.test.ts** (35 tests, all green):\\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\\n   - E1: orphan toolResult → plain unit, survives rewind\\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\\n   - E4: maxDepth exceeded → tool refuses with count\\n   - E5: side-effect span → VERBATIM mutation warning\\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\\n   - E8: marker targets nothing → no-op, idempotent\\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\\n   - E10: checkpoint invalid name/not found → refusal\\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\\n   - E12: getContextUsage undefined → audit tolerates\\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\\n   - E16: audit before inference → fallback, confidence 'low'\\n   - E17: two shrinks same target → last wins\\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\\n   - E19: shrink non-toolResult → role preserved\\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\\n\\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\\n   - Robust beforeAll: pi version check, graceful skip if unavailable\\n\\n## Validation Results\\n- Level 1 (tsc --noEmit): ✅ zero errors\\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\\n\\n## README Limitation Text (VERBATIM for P1.M5.T4)\\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "All deliverables implemented and all validation gates pass.\n\n## Deliverables Created\n\n1. **test/edge-cases.test.ts** (35 tests, all green):\n   - Named assertions for ALL 20 edges (E1–E20), each traceable to spec/08\n   - E1: orphan toolResult → plain unit, survives rewind\n   - E2: resolveLastToolCallGroup excludes rewind's own toolCallId\n   - E3: protected message → protectedOk returns false + filterPipeline no-ops\n   - E4: maxDepth exceeded → tool refuses with count\n   - E5: side-effect span → VERBATIM mutation warning\n   - E6: parallel-tool → resolveLastToolCallGroup skips shared group (T3 comment)\n   - E7: compaction leak → filterPipeline no crash (DOCUMENTED LIMITATION)\n   - E8: marker targets nothing → no-op, idempotent\n   - E9: vacuous note → NOTE_INVALID_REASON refusal\n   - E10: checkpoint invalid name/not found → refusal\n   - E11: readMarkers buckets persisted entries + contextHandler applies filter\n   - E12: getContextUsage undefined → audit tolerates\n   - E13: contextHandler fail-open pass-through (throwOnGetBranch→undefined) (T3 comment)\n   - E14: config.enabled=false → pass-through + all 4 tools refuse\n   - E15: 50 rewinds + 50 shrinks → no crash (DOCUMENTED LIMITATION)\n   - E16: audit before inference → fallback, confidence 'low'\n   - E17: two shrinks same target → last wins\n   - E18: injectNudge appends to COPY, original unchanged (DOCUMENTED LIMITATION)\n   - E19: shrink non-toolResult → role preserved\n   - E20: makeRewindTool → appended[0] is mulligan:rewind, sent[0] is mulligan:note\n   - Self-contained randomized pairing-invariant property test (100 iters, seeded)\n\n2. **test/integration/edge-cases.integration.test.ts** (2 tests, green with RUN_INTEGRATION=1):\n   - Gated describe.skipIf(!process.env.RUN_INTEGRATION)\n   - E20: JSONL proves mulligan:rewind custom < toolResult < mulligan:note (ordering verified against real pi 0.84.1)\n   - E11: mulligan:rewind custom entry persists across --session-id reopen (two runs, same session)\n   - Robust beforeAll: pi version check, graceful skip if unavailable\n\n## Validation Results\n- Level 1 (tsc --noEmit): ✅ zero errors\n- Level 2 (vitest run test/edge-cases.test.ts): ✅ 35/35 passed\n- Level 3 (vitest run): ✅ 635/635 passed, 2 skipped (integration gated), zero regressions\n- Level 4 (RUN_INTEGRATION=1): ✅ 2/2 integration tests passed (E20 ordering + E11 persistence)\n- Manual: ✅ no src/ changes, no README.md edit, no registerCommand, no T3 duplication\n\n## README Limitation Text (VERBATIM for P1.M5.T4)\nCarried in PRP §'README known-limitation notes (VERBATIM for P1.M5.T4)' — covers E7 (compaction transient leak), E15 (no marker GC), E18 (advisory nudges). This task does NOT edit README.md."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/edge-cases.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n\n Test Files  1 passed (1)\n      Tests  35 passed (35)\n   Start at  08:30:16\n   Duration  856ms (transform 91ms, setup 0ms, collect 509ms, tests 20ms, environment 0ms, prepare 138ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 13ms\n ✓ test/runtime.test.ts  (17 tests) 12ms\n ✓ test/nudges.test.ts  (26 tests) 6ms\n ✓ test/config.test.ts  (24 tests) 17ms\n ✓ test/ledger.test.ts  (39 tests) 18ms\n ✓ test/transforms.test.ts  (118 tests) 29ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/pipeline.test.ts  (33 tests) 33ms\n ✓ test/turn_metric.test.ts  (17 tests) 16ms\n ✓ test/markers.test.ts  (42 tests) 21ms\n ✓ test/log.test.ts  (15 tests) 31ms\n ✓ test/tokens.test.ts  (51 tests) 43ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/shrink.test.ts  (23 tests) 9ms\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n ✓ test/index.test.ts  (6 tests) 772ms\n ✓ test/tools/rewind.test.ts  (29 tests) 13ms\n\n Test Files  20 passed | 1 skipped (21)\n      Tests  635 passed | 2 skipped (637)\n   Start at  08:30:18\n   Duration  1.33s (transform 1.83s, setup 2ms, collect 6.51s, tests 1.10s, environment 3ms, prepare 2.82s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "RUN_INTEGRATION=1 npx vitest run test/integration/edge-cases.integration.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\nstdout | test/integration/edge-cases.integration.test.ts > edge-case integration (real pi -p)\n[integration] pi --version: 0.84.1\n\n ✓ test/integration/edge-cases.integration.test.ts  (2 tests) 48430ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  08:30:19\n   Duration  48.77s (transform 26ms, setup 0ms, collect 18ms, tests 48.43s, environment 0ms, prepare 177ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T12:31:08.845Z"
+      },
+      "createdAt": "2026-08-10T12:31:08.845Z"
+    }
+  ],
+  "lastModified": "2026-08-10T12:31:08.845Z"
+}

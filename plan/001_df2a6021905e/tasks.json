@@ -448,14 +448,14 @@
               "id": "P1.M5.T2",
               "type": "Task",
               "title": "Edge-case pass (E1–E20) — targeted verification",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Walk spec/08 E1–E20 as a checklist with targeted tests/scenarios: orphan toolResult (E1), rewinding-the-executing-turn exclusion (E2), protected-message refusal (E3), max-depth (E4), side-effect mutation warning (E5), parallel-tool mode conservative handling (E6), compaction-leak as bounded/transient (E7), marker-targets-nothing no-op (E8), note validation (E9), checkpoint name/exists (E10), reload (E11), getContextUsage undefined (E12), tool throws → fail-open (E13), config-disabled no-op (E14), marker accumulation (E15), audit-before-inference (E16), two shrinks same target last-wins (E17), model ignores nudges (E18), shrink non-toolResult (E19), append/sendMessage ordering (E20).",
               "subtasks": [
                 {
                   "id": "P1.M5.T2.S1",
                   "type": "Subtask",
                   "title": "E1–E20 edge-case suite + integration scenarios for the load-bearing ones",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M5.T1.S1"

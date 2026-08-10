@@ -1,0 +1,57 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "npx tsc --noEmit",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx vitest run test/edge-cases.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n\n Test Files  1 passed (1)\n      Tests  35 passed (35)\n   Start at  08:30:16\n   Duration  856ms (transform 91ms, setup 0ms, collect 509ms, tests 20ms, environment 0ms, prepare 138ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx vitest run",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 13ms\n ✓ test/runtime.test.ts  (17 tests) 12ms\n ✓ test/nudges.test.ts  (26 tests) 6ms\n ✓ test/config.test.ts  (24 tests) 17ms\n ✓ test/ledger.test.ts  (39 tests) 18ms\n ✓ test/transforms.test.ts  (118 tests) 29ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/pipeline.test.ts  (33 tests) 33ms\n ✓ test/turn_metric.test.ts  (17 tests) 16ms\n ✓ test/markers.test.ts  (42 tests) 21ms\n ✓ test/log.test.ts  (15 tests) 31ms\n ✓ test/tokens.test.ts  (51 tests) 43ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/shrink.test.ts  (23 tests) 9ms\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n ✓ test/index.test.ts  (6 tests) 772ms\n ✓ test/tools/rewind.test.ts  (29 tests) 13ms\n\n Test Files  20 passed | 1 skipped (21)\n      Tests  635 passed | 2 skipped (637)\n   Start at  08:30:18\n   Duration  1.33s (transform 1.83s, setup 2ms, collect 6.51s, tests 1.10s, environment 3ms, prepare 2.82s)\n\n",
+    "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "RUN_INTEGRATION=1 npx vitest run test/integration/edge-cases.integration.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\nstdout | test/integration/edge-cases.integration.test.ts > edge-case integration (real pi -p)\n[integration] pi --version: 0.84.1\n\n ✓ test/integration/edge-cases.integration.test.ts  (2 tests) 48430ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  08:30:19\n   Duration  48.77s (transform 26ms, setup 0ms, collect 18ms, tests 48.43s, environment 0ms, prepare 177ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]
