@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M3.T1.S1_1786332200803_pre-execution_ef3ee43c",
+      "taskId": "P1.M3.T1.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M3_T1_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-10T03:23:20.803Z"
+      },
+      "createdAt": "2026-08-10T03:23:20.803Z"
+    },
+    {
+      "id": "P1.M3.T1.S1_1786332461602_coder-response_20e9aad3",
+      "taskId": "P1.M3.T1.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M3_T1_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All gates green. Here's the result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0.\"\n}\n```\n\n## Summary of what was delivered\n\n### `src/markers.ts` — 5 exported wrapper functions + owned types\n\n| Function | Signature | Behavior |\n|---|---|---|\n| `appendRewindMarker` | `(pi, ctx, data: RewindMarkerInput) → string \\| null` | Stamps `{schema,v,kind,id:uuid,seq,ts}`, calls `pi.appendEntry(\"mulligan:rewind\", ...)`, captures leaf id via `getLeafId()` (C7) |\n| `appendShrinkMarker` | `(pi, ctx, data: ShrinkMarkerInput) → string \\| null` | Same pattern, kind `\"shrink\"`, stamps `id` |\n| `appendTurnMetric` | `(pi, ctx, data: TurnMetricInput) → string \\| null` | Same pattern, kind `\"turn-metric\"`, **no id** (spec/04 §5) |\n| `leaveNote` | `(pi, note: LeaveNoteInput) → void` | Calls `pi.sendMessage(...)` with `display:true`, NO options arg (C8) |\n| `setCheckpoint` | `(pi, ctx, name) → string \\| null` | Calls `pi.setLabel(leafId, \"mulligan:checkpoint:\" + name)` (C9) |\n\nAll wrappers are fail-open (never throw), import shared types from canonical owners (Granularity/NoteInput/FileLedger/ShrinkTarget), and read `ctx.sessionManager` fresh each call (C12).\n\n### `test/markers.test.ts` — 42 tests across 14 describe blocks\n- Envelope/customType/seq/ts stamping for all 3 marker types\n- Id rules (rewind+shrink=uuid, turn-metric=none)\n- Seq monotonic + per-session isolation (shared counter)\n- C7 leaf-id capture + call order\n- Leaf-null path (returns null, marker still appended)\n- Never-throws fail-open (throwing pi/ctx methods)\n- Read-back type=custom (not custom_message)\n- leaveNote (sendMessage, no options, void, custom_message channel)\n- setCheckpoint (setLabel prefix, getLabel round-trip C9)\n- Compile-time type assertions via expectTypeOf",
+        "coderResult": {
+          "result": "success",
+          "message": "Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-10T03:27:41.602Z"
+      },
+      "createdAt": "2026-08-10T03:27:41.602Z"
+    },
+    {
+      "id": "P1.M3.T1.S1_1786332473867_validation-gate-4_bd3b38e2",
+      "taskId": "P1.M3.T1.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M3_T1_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All gates green. Here's the result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0.\"\n}\n```\n\n## Summary of what was delivered\n\n### `src/markers.ts` — 5 exported wrapper functions + owned types\n\n| Function | Signature | Behavior |\n|---|---|---|\n| `appendRewindMarker` | `(pi, ctx, data: RewindMarkerInput) → string \\| null` | Stamps `{schema,v,kind,id:uuid,seq,ts}`, calls `pi.appendEntry(\"mulligan:rewind\", ...)`, captures leaf id via `getLeafId()` (C7) |\n| `appendShrinkMarker` | `(pi, ctx, data: ShrinkMarkerInput) → string \\| null` | Same pattern, kind `\"shrink\"`, stamps `id` |\n| `appendTurnMetric` | `(pi, ctx, data: TurnMetricInput) → string \\| null` | Same pattern, kind `\"turn-metric\"`, **no id** (spec/04 §5) |\n| `leaveNote` | `(pi, note: LeaveNoteInput) → void` | Calls `pi.sendMessage(...)` with `display:true`, NO options arg (C8) |\n| `setCheckpoint` | `(pi, ctx, name) → string \\| null` | Calls `pi.setLabel(leafId, \"mulligan:checkpoint:\" + name)` (C9) |\n\nAll wrappers are fail-open (never throw), import shared types from canonical owners (Granularity/NoteInput/FileLedger/ShrinkTarget), and read `ctx.sessionManager` fresh each call (C12).\n\n### `test/markers.test.ts` — 42 tests across 14 describe blocks\n- Envelope/customType/seq/ts stamping for all 3 marker types\n- Id rules (rewind+shrink=uuid, turn-metric=none)\n- Seq monotonic + per-session isolation (shared counter)\n- C7 leaf-id capture + call order\n- Leaf-null path (returns null, marker still appended)\n- Never-throws fail-open (throwing pi/ctx methods)\n- Read-back type=custom (not custom_message)\n- leaveNote (sendMessage, no options, void, custom_message channel)\n- setCheckpoint (setLabel prefix, getLabel round-trip C9)\n- Compile-time type assertions via expectTypeOf",
+        "coderResult": {
+          "result": "success",
+          "message": "Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/markers.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/markers.test.ts  (42 tests) 11ms\n\n Test Files  1 passed (1)\n      Tests  42 passed (42)\n   Start at  23:27:43\n   Duration  372ms (transform 44ms, setup 0ms, collect 45ms, tests 11ms, environment 0ms, prepare 56ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -e ./src/index.ts -p hi",
+            "stdout": "Hi! 👋 I'm ready to help. I see we're in the `pi-mulligan-hack` project directory. What would you like to work on?\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T03:27:53.867Z"
+      },
+      "createdAt": "2026-08-10T03:27:53.867Z"
+    },
+    {
+      "id": "P1.M3.T1.S1_1786332473870_complete_a8074911",
+      "taskId": "P1.M3.T1.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M3_T1_S1.md",
+        "stage": "complete",
+        "coderResponse": "All gates green. Here's the result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0.\"\n}\n```\n\n## Summary of what was delivered\n\n### `src/markers.ts` — 5 exported wrapper functions + owned types\n\n| Function | Signature | Behavior |\n|---|---|---|\n| `appendRewindMarker` | `(pi, ctx, data: RewindMarkerInput) → string \\| null` | Stamps `{schema,v,kind,id:uuid,seq,ts}`, calls `pi.appendEntry(\"mulligan:rewind\", ...)`, captures leaf id via `getLeafId()` (C7) |\n| `appendShrinkMarker` | `(pi, ctx, data: ShrinkMarkerInput) → string \\| null` | Same pattern, kind `\"shrink\"`, stamps `id` |\n| `appendTurnMetric` | `(pi, ctx, data: TurnMetricInput) → string \\| null` | Same pattern, kind `\"turn-metric\"`, **no id** (spec/04 §5) |\n| `leaveNote` | `(pi, note: LeaveNoteInput) → void` | Calls `pi.sendMessage(...)` with `display:true`, NO options arg (C8) |\n| `setCheckpoint` | `(pi, ctx, name) → string \\| null` | Calls `pi.setLabel(leafId, \"mulligan:checkpoint:\" + name)` (C9) |\n\nAll wrappers are fail-open (never throw), import shared types from canonical owners (Granularity/NoteInput/FileLedger/ShrinkTarget), and read `ctx.sessionManager` fresh each call (C12).\n\n### `test/markers.test.ts` — 42 tests across 14 describe blocks\n- Envelope/customType/seq/ts stamping for all 3 marker types\n- Id rules (rewind+shrink=uuid, turn-metric=none)\n- Seq monotonic + per-session isolation (shared counter)\n- C7 leaf-id capture + call order\n- Leaf-null path (returns null, marker still appended)\n- Never-throws fail-open (throwing pi/ctx methods)\n- Read-back type=custom (not custom_message)\n- leaveNote (sendMessage, no options, void, custom_message channel)\n- setCheckpoint (setLabel prefix, getLabel round-trip C9)\n- Compile-time type assertions via expectTypeOf",
+        "coderResult": {
+          "result": "success",
+          "message": "Implemented src/markers.ts (5 fail-open wrappers) + test/markers.test.ts (42 tests). All validation gates pass: tsc --noEmit exit 0, vitest 42/42 green (411/411 full suite), pi load smoke exit 0."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/markers.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/markers.test.ts  (42 tests) 11ms\n\n Test Files  1 passed (1)\n      Tests  42 passed (42)\n   Start at  23:27:43\n   Duration  372ms (transform 44ms, setup 0ms, collect 45ms, tests 11ms, environment 0ms, prepare 56ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -e ./src/index.ts -p hi",
+            "stdout": "Hi! 👋 I'm ready to help. I see we're in the `pi-mulligan-hack` project directory. What would you like to work on?\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T03:27:53.870Z"
+      },
+      "createdAt": "2026-08-10T03:27:53.870Z"
+    }
+  ],
+  "lastModified": "2026-08-10T03:27:53.870Z"
+}

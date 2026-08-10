@@ -245,14 +245,14 @@
               "id": "P1.M3.T1",
               "type": "Task",
               "title": "Marker persistence wrappers (markers.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Thin wrappers around pi.appendEntry/sendMessage/setLabel that persist markers + the note + checkpoints, capture the marker id immediately after append (C7), and bump the session seq.",
               "subtasks": [
                 {
                   "id": "P1.M3.T1.S1",
                   "type": "Subtask",
                   "title": "appendRewindMarker / appendShrinkMarker / appendTurnMetric / leaveNote / setCheckpoint",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T3.S1",
