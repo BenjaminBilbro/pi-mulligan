@@ -173,14 +173,14 @@
               "id": "P1.M2.T4",
               "type": "Task",
               "title": "Transforms — pairing & partitioning (transforms.ts core)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement the cardinal pairing primitive: partitionIntoUnits. This enforces the tool-pairing invariant (spec/06 §2) by construction — every removal operates on units, never raw indices. THE most important correctness primitive; do not proceed until the pairing invariant holds on randomized inputs.",
               "subtasks": [
                 {
                   "id": "P1.M2.T4.S1",
                   "type": "Subtask",
                   "title": "partitionIntoUnits (plain + toolGroup units)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"
