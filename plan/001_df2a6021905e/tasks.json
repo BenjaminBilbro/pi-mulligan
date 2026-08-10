@@ -11,7 +11,7 @@
           "id": "P1.M1",
           "type": "Milestone",
           "title": "Project Foundation & Infrastructure",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Establish a runnable no-op extension, the configuration system, the structured logger, and the per-session runtime map. Everything downstream depends on this. Verifies greenfield scaffold loads in `pi -e ./src/index.ts` without error.",
           "tasks": [
             {
@@ -79,14 +79,14 @@
               "id": "P1.M1.T4",
               "type": "Task",
               "title": "Per-session runtime map (runtime.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement the in-memory (non-persisted) per-session state: monotonic seq counter, token baseline, last turn index, and the cached lastFiltered view for audit. Held in a Map keyed by sessionId; created/reset on session_start.",
               "subtasks": [
                 {
                   "id": "P1.M1.T4.S1",
                   "type": "Subtask",
                   "title": "SessionRuntime map + seq counter + baseline + lastFiltered cache",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T1.S1"
