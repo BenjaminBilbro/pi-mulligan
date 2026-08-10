@@ -109,14 +109,14 @@
               "id": "P1.M2.T1",
               "type": "Task",
               "title": "Token estimation helpers (tokens.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Cheap, deterministic token/byte estimation used by the audit tool and the drift nudge. Character/structure-based (NOT a real tokenizer) with an honest confidence flag.",
               "subtasks": [
                 {
                   "id": "P1.M2.T1.S1",
                   "type": "Subtask",
                   "title": "estimateTokens, resultBytes, approxTokens",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"

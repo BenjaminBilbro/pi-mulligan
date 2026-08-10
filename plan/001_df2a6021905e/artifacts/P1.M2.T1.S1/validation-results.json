@@ -1,0 +1,46 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "test -f src/tokens.ts -a -f test/tokens.test.ts",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx tsc --noEmit",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "npx vitest run test/tokens.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/tokens.test.ts  (51 tests) 20ms\n\n Test Files  1 passed (1)\n      Tests  51 passed (51)\n   Start at  21:53:31\n   Duration  364ms (transform 44ms, setup 0ms, collect 34ms, tests 20ms, environment 0ms, prepare 161ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]
