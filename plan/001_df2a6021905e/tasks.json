@@ -346,14 +346,14 @@
               "id": "P1.M4.T2",
               "type": "Task",
               "title": "mulligan_shrink tool (tools/shrink.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Validates the replacement, does a best-effort match-now (using the pure resolver) for immediate feedback, persists the shrink marker. Retroactive shrink is a view-substitution, not a JSONL rewrite (C6).",
               "subtasks": [
                 {
                   "id": "P1.M4.T2.S1",
                   "type": "Subtask",
                   "title": "mulligan_shrink execute(): validate → match-now → persist shrink marker",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1",
