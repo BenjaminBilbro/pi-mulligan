@@ -267,14 +267,14 @@
               "id": "P1.M3.T2",
               "type": "Task",
               "title": "Context-event filter handler (filter.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The heart: a `context` handler that, on every inference, reads markers, runs the pure filterPipeline (rewinds+shrinks), caches the filtered view in runtime.lastFiltered for audit, and returns {messages}. Fail-open on any error (pass-through). Nudge injection is added in P1.M3.T3.",
               "subtasks": [
                 {
                   "id": "P1.M3.T2.S1",
                   "type": "Subtask",
                   "title": "context handler glue — read markers → filterPipeline → cache lastFiltered → fail-open",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T6.S1",
