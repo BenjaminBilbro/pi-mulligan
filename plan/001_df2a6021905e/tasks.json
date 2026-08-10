@@ -102,7 +102,7 @@
           "id": "P1.M2",
           "type": "Milestone",
           "title": "Pure Core Library (zero-Pi, fully unit-tested)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the ENTIRE correctness surface as pure functions with NO Pi dependency: token estimation, file-ledger extraction, note rendering/validation, and the transform pipeline (pairing-aware partitioning, resolvers, apply ops, composition). This is where ~all correctness lives and is unit-testable without Pi/model/session. Per architecture/external_deps.md §3.1, filterPipeline handles rewinds+shrinks ONLY (nudge injection lives in filter.ts glue).",
           "tasks": [
             {
@@ -215,14 +215,14 @@
               "id": "P1.M2.T6",
               "type": "Task",
               "title": "Transforms — apply ops, protectedOk, and the pure filterPipeline",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement applyRewind (unit-aware removal), applyShrink (content substitution preserving role/toolCallId/toolName/isError), resolveShrinkTarget, protectedOk, and the PURE filterPipeline that composes rewinds(oldest-first)→shrinks(oldest-first). Includes the property/invariant tests (pairing on randomized inputs, idempotency, monotonic shrinkage). Nudge injection is NOT here — see architecture/external_deps.md §3.1.",
               "subtasks": [
                 {
                   "id": "P1.M2.T6.S1",
                   "type": "Subtask",
                   "title": "applyRewind, applyShrink, resolveShrinkTarget, protectedOk, filterPipeline (rewinds+shrinks only)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T5.S1"

@@ -481,3 +481,330 @@ function entryMessageYield(entry: unknown): number {
 function isContextProducingType(type: unknown): boolean {
   return type === "message" || type === "custom_message" || type === "branch_summary" || type === "compaction";
 }
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// APPLY-OPS + PROTECTION + COMPOSITION (P1.M2.T6.S1)
+// Five contract functions + supporting types/helpers, all PURE + Pi-FREE (0 imports — zero-import invariant).
+// Reuses partitionIntoUnits / resolveLastToolCallGroup / resolveLastTurn / resolveCheckpoint / MessageLike /
+// BranchEntry / Unit + the module-private isRecord / readOwn (all in scope from T4/T5).
+// ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * applyRewind — gap-closed removal over resolved unit indices (spec/06 §3/§4).
+ * Non-array messages → []; non-array/empty remove → messages UNCHANGED (SAME ref — no-op/idempotent;
+ * spec/10 §1.4). Builds a Set of NUMERIC removal indices (non-numbers/NaN ignored); empty Set → SAME ref.
+ * `messages.filter((_msg,i)=>!removeSet.has(i))` (gap-closed; callback IGNORES the element → throwing-Proxy
+ * get-trap never fires → never throws — E13). Never mutates input.
+ *
+ * @param messages the message list; non-array → []
+ * @param remove ascending message indices to drop (from a resolver); empty/non-array → messages unchanged
+ * @returns a NEW array with `remove` indices dropped (gap closed); the SAME array reference when nothing is removed
+ */
+export function applyRewind(messages: MessageLike[], remove: number[]): MessageLike[] {
+  if (!Array.isArray(messages)) return [];
+  if (!Array.isArray(remove) || remove.length === 0) return messages;
+
+  const removeSet = new Set<number>();
+  for (const r of remove) {
+    if (typeof r === "number" && !Number.isNaN(r)) removeSet.add(r);
+  }
+  if (removeSet.size === 0) return messages;
+
+  return messages.filter((_msg, i) => !removeSet.has(i));
+}
+
+/**
+ * ShrinkTarget — how a shrink identifies the message whose content to substitute (spec/04 §4; spec/06 §5).
+ * Discriminated union; resolveShrinkTarget resolves it LIVE each inference against the current messages
+ * (compaction-robust). STRUCTURALLY IDENTICAL to markers.ts's ShrinkTarget — declared LOCALLY so transforms.ts
+ * stays Pi-FREE (0 imports). EXPORTED so the shrink tool (M4.T2) and tests share one shape at the pure tier.
+ */
+export type ShrinkTarget =
+  | { by_tool_call_id: string }
+  | { by_tool_name: string; occurrence: "last" | "first" }
+  | { by_content_includes: string };
+
+/**
+ * resolveShrinkTarget — resolve a ShrinkTarget to a single message index, LIVE against the current messages
+ * (spec/06 §5; spec/04 §4). Returns the matched index or null.
+ *
+ * MATCHER STRATEGIES (spec/06 §5):
+ *   - by_tool_call_id: first toolResult whose toolCallId === id (unique → at most one).
+ *   - by_tool_name + occurrence: among toolResults with toolName === name, LAST (default) or FIRST.
+ *   - by_content_includes: first message (ANY role — E19) whose stringified content includes the substring.
+ * First present non-empty-string discriminator wins; no recognizable discriminator → null.
+ * NEVER throws (every field read via isRecord/readOwn; E13).
+ *
+ * @param messages the message list; non-array → null
+ * @param target the ShrinkTarget (discriminated union); non-record → null
+ * @returns the matched message index, or null when nothing matches
+ */
+export function resolveShrinkTarget(messages: MessageLike[], target: ShrinkTarget): number | null {
+  if (!Array.isArray(messages)) return null;
+  if (!isRecord(target)) return null;
+
+  // by_tool_call_id: first toolResult whose toolCallId === id (unique → at most one).
+  const callId = readOwn(target, "by_tool_call_id");
+  if (typeof callId === "string" && callId.length > 0) {
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      if (!isRecord(m) || readOwn(m, "role") !== "toolResult") continue;
+      if (readOwn(m, "toolCallId") === callId) return i;
+    }
+    return null;
+  }
+
+  // by_tool_name + occurrence: among toolResults with toolName === name, last (default) or first.
+  const name = readOwn(target, "by_tool_name");
+  if (typeof name === "string" && name.length > 0) {
+    const wantFirst = readOwn(target, "occurrence") === "first"; // anything else (incl. missing) → last
+    let found = -1;
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      if (!isRecord(m) || readOwn(m, "role") !== "toolResult") continue;
+      if (readOwn(m, "toolName") === name) {
+        if (wantFirst) return i;
+        found = i;
+      }
+    }
+    return found === -1 ? null : found;
+  }
+
+  // by_content_includes: first message (ANY role — E19) whose stringified content includes the substring.
+  const needle = readOwn(target, "by_content_includes");
+  if (typeof needle === "string") {
+    for (let i = 0; i < messages.length; i++) {
+      if (stringifyContent(readOwn(messages[i], "content")).includes(needle)) return i;
+    }
+    return null;
+  }
+
+  return null; // no recognizable discriminator key
+}
+
+/**
+ * applyShrink — LIVE-ONLY 2-param content substitution (spec/06 §5; spec/08 E8/E17/E19).
+ * Resolves the target to a message index; null/out-of-range → messages UNCHANGED (SAME ref — no-op, E8).
+ * Else `{...orig, content:[{type:"text",text:replacement}]}` (spread preserves role/toolCallId/toolName/isError
+ * → pairing intact + role preserved E19); try/catch on throwing-Proxy spread → minimal fallback.
+ * New array via messages.map; non-matched copied by reference.
+ * Multiple shrinks same target → seq order LAST wins (automatic via re-resolution; E17).
+ * CONTRACT: 2-param LIVE-ONLY (no branchEntries/pinnedEntryId — later task; NO import from markers.ts).
+ *
+ * @param messages the message list; non-array → []
+ * @param marker { target, replacement } (a real ShrinkMarker assigns in with no cast)
+ * @returns a NEW array with the matched message's content substituted; the SAME array reference on a no-op
+ */
+export function applyShrink(
+  messages: MessageLike[],
+  marker: { target: ShrinkTarget; replacement: string },
+): MessageLike[] {
+  if (!Array.isArray(messages)) return [];
+  if (!isRecord(marker)) return messages;
+
+  const i = resolveShrinkTarget(messages, readOwn(marker, "target") as ShrinkTarget);
+  if (i === null || i < 0 || i >= messages.length) return messages;
+
+  const orig = messages[i];
+  const rep = readOwn(marker, "replacement");
+  const text = typeof rep === "string" ? rep : "";
+  const newContent = [{ type: "text", text }];
+
+  const role = readOwn(orig, "role");
+  let replacement: MessageLike;
+  try {
+    replacement = { ...(orig as MessageLike), content: newContent };
+  } catch {
+    replacement = { role: typeof role === "string" ? role : undefined, content: newContent };
+  }
+
+  return messages.map((m, j) => (j === i ? replacement : m));
+}
+
+/**
+ * Module-private: stringify a message's `content` for by_content_includes substring search.
+ * String → verbatim; array → JSON.stringify; anything else → "". Never throws (try/catch on JSON.stringify).
+ */
+function stringifyContent(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    try {
+      return JSON.stringify(content);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
+// ── marker / config structural types (read-slice contract with markers.ts/config.ts) ─────────────────────
+
+/**
+ * RewindMarkerLike — the structural slice of a persisted RewindMarker that filterPipeline READS
+ * (spec/04 §3; spec/06 §1/§12). NO `hideEntryIds` — that's a later fix task. Declared LOCALLY so transforms.ts
+ * stays Pi-FREE. A real markers.ts RewindMarker assigns in with NO cast.
+ */
+export interface RewindMarkerLike {
+  seq: number;
+  granularity: "last_tool_call_group" | "last_turn" | "checkpoint";
+  options?: { to_previous_prompt?: boolean };
+  excludeToolCallId?: string;
+  checkpoint?: string;
+}
+
+/**
+ * ShrinkMarkerLike — the structural slice of a persisted ShrinkMarker that filterPipeline READS + ORDERS
+ * (spec/04 §4; spec/06 §5). NO `pinnedEntryId` — that's a later fix task. Structurally assignable to
+ * applyShrink's {target, replacement} param (extra `seq` is fine).
+ */
+export interface ShrinkMarkerLike {
+  seq: number;
+  target: ShrinkTarget;
+  replacement: string;
+}
+
+/** MarkerBundle — the marker set filterPipeline transforms (spec/06 §1; spec/03 §5). */
+export interface MarkerBundle {
+  rewinds: RewindMarkerLike[];
+  shrinks: ShrinkMarkerLike[];
+}
+
+/** ProtectedConfig — the config slice protectedOk reads (spec/06 §8; spec/04 §7). */
+export interface ProtectedConfig {
+  rewind: { protectedRoles: string[] };
+}
+
+// ── stableSortBySeq + readOwnSeq ────────────────────────────────────────────────────────────────────
+
+/**
+ * stableSortBySeq — return a NEW array of markers sorted ASCENDING by `seq` (oldest-first), preserving input
+ * order for equal seq (stable). Non-array → []; seq missing/non-finite/throwing-Proxy → 0. Never mutates input.
+ * (spec/06 §1; spec/03 §5.)
+ */
+export function stableSortBySeq<T extends { seq?: unknown }>(markers: T[]): T[] {
+  if (!Array.isArray(markers)) return [];
+  return [...markers].sort((a, b) => readOwnSeq(a) - readOwnSeq(b));
+}
+
+/** Module-private: read a marker's `seq` as a finite number (0 if missing/non-finite/throwing-Proxy). */
+function readOwnSeq(marker: unknown): number {
+  const s = readOwn(marker, "seq");
+  return typeof s === "number" && Number.isFinite(s) ? s : 0;
+}
+
+// ── protectedOk (spec/06 §8) ────────────────────────────────────────────────────────────────────────
+
+/**
+ * protectedOk — the FILTER's defense-in-depth check for a rewind's removal set (spec/06 §8). Returns true when
+ * the rewind is ALLOWED to remove; false when it must be SKIPPED. Enforces first:user: min(remove) > iFirstUser.
+ * Empty/non-array remove → true (vacuous); non-array messages → true. Config omitting "first:user" from
+ * protectedRoles → true (disabled). Malformed/missing config → enforce (fail safe). NEVER throws (E13).
+ *
+ * @param messages the CURRENT message list; non-array → true (vacuous)
+ * @param remove the rewind's removal index set; empty/non-array → true
+ * @param config the config slice; missing/malformed → enforce first:user (fail safe)
+ * @returns true if the rewind may proceed; false if it must be skipped
+ */
+export function protectedOk(
+  messages: MessageLike[],
+  remove: number[],
+  config: ProtectedConfig | undefined,
+): boolean {
+  if (!Array.isArray(remove) || remove.length === 0) return true;
+  if (!Array.isArray(messages)) return true;
+
+  let protectFirstUser = true;
+  const rewindCfg = isRecord(config) ? readOwn(config, "rewind") : undefined;
+  const roles = isRecord(rewindCfg) ? readOwn(rewindCfg, "protectedRoles") : undefined;
+  if (Array.isArray(roles) && roles.length > 0) {
+    protectFirstUser = roles.some((r) => r === "first:user");
+  }
+  if (!protectFirstUser) return true;
+
+  let iFirstUser = -1;
+  for (let i = 0; i < messages.length; i++) {
+    if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") {
+      iFirstUser = i;
+      break;
+    }
+  }
+  if (iFirstUser === -1) return true;
+
+  let minRemove = Infinity;
+  for (const r of remove) {
+    if (typeof r === "number" && !Number.isNaN(r) && r < minRemove) minRemove = r;
+  }
+  if (!Number.isFinite(minRemove)) return true;
+  return minRemove > iFirstUser;
+}
+
+// ── filterPipeline (granularity dispatch ONLY — spec/06 §1/§5/§8/§11/§12; spec/03 §5) ──────────────────
+
+/**
+ * filterPipeline — Mulligan's composition core: apply persisted markers to a message list (spec/06 §1/§5/§8/§11/§12;
+ * spec/03 §5). The single PURE entry point the context handler (filter.ts, M3) calls.
+ *
+ * ORDER (FIXED): (1) rewinds oldest-first, each resolving against the CURRENT (already-reduced) array, gated by
+ * protectedOk → applyRewind; (2) shrinks oldest-first via applyShrink; (3) return. NO injectNudge (filter.ts's job
+ * per external_deps §3.1). NO hideEntryIds/turnHasAdvanced/diag (later fix tasks — CONTRACT is granularity dispatch
+ * only). RE-PARTITIONS fresh each rewind iteration.
+ *
+ * SAME reference as messages when no marker transforms anything. Never throws (E13). Pure + deterministic.
+ *
+ * @param messages      the message list; non-array → []
+ * @param markers       { rewinds, shrinks }; undefined/non-record → pass-through
+ * @param config        the config slice protectedOk reads; undefined → enforce first:user
+ * @param branchEntries getBranch() output for checkpoint rewinds (root→leaf); optional
+ * @returns the filtered message array; SAME ref when no transform
+ */
+export function filterPipeline(
+  messages: MessageLike[],
+  markers: MarkerBundle | undefined,
+  config: ProtectedConfig | undefined,
+  branchEntries?: BranchEntry[],
+): MessageLike[] {
+  if (!Array.isArray(messages)) return [];
+
+  const bundle = isRecord(markers) ? markers : undefined;
+  const rewindsRaw = bundle ? readOwn(bundle, "rewinds") : undefined;
+  const shrinksRaw = bundle ? readOwn(bundle, "shrinks") : undefined;
+  const rewinds: RewindMarkerLike[] = Array.isArray(rewindsRaw) ? (rewindsRaw as RewindMarkerLike[]) : [];
+  const shrinks: ShrinkMarkerLike[] = Array.isArray(shrinksRaw) ? (shrinksRaw as ShrinkMarkerLike[]) : [];
+
+  let m = messages;
+
+  // 1) REWINDS, oldest-first (stableSortBySeq). RE-PARTITION fresh each iteration.
+  for (const rw of stableSortBySeq(rewinds)) {
+    const granularity = readOwn(rw, "granularity");
+    const excludeRaw = readOwn(rw, "excludeToolCallId");
+    const excludeId = typeof excludeRaw === "string" ? excludeRaw : undefined;
+
+    let remove: number[];
+    if (granularity === "last_tool_call_group") {
+      const units = partitionIntoUnits(m); // RE-PARTITION fresh each iteration
+      remove = resolveLastToolCallGroup(units, m, excludeId) ?? [];
+    } else if (granularity === "last_turn") {
+      remove = resolveLastTurn(
+        m,
+        readOwn(rw, "options") as { to_previous_prompt?: boolean } | undefined,
+        excludeId,
+      ).remove;
+    } else if (granularity === "checkpoint") {
+      const cpRaw = readOwn(rw, "checkpoint");
+      const cpName = typeof cpRaw === "string" ? cpRaw : "";
+      remove = resolveCheckpoint(m, Array.isArray(branchEntries) ? branchEntries : [], cpName, excludeId)?.remove ?? [];
+    } else {
+      remove = [];
+    }
+
+    if (!protectedOk(m, remove, config)) continue;
+    m = applyRewind(m, remove);
+  }
+
+  // 2) SHRINKS, oldest-first (stableSortBySeq). ShrinkMarkerLike is structurally assignable to applyShrink's param.
+  for (const sh of stableSortBySeq(shrinks)) {
+    m = applyShrink(m, sh);
+  }
+
+  return m;
+}

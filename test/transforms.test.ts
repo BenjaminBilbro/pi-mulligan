@@ -4,6 +4,10 @@ import {
   resolveLastToolCallGroup,
   resolveLastTurn,
   resolveCheckpoint,
+  applyRewind,
+  resolveShrinkTarget,
+  applyShrink,
+  type ShrinkTarget,
   type Unit,
   type MessageLike,
   type BranchEntry,
@@ -26,12 +30,12 @@ function asstText(text: string): MessageLike {
   return { role: "assistant", content: [{ type: "text", text }] };
 }
 
-/** Build a toolResult message for the given toolCallId. */
-function result(toolCallId: string): MessageLike {
+/** Build a toolResult message for the given toolCallId (optionally custom toolName). */
+function result(toolCallId: string, toolName?: string): MessageLike {
   return {
     role: "toolResult",
     toolCallId,
-    toolName: "tool",
+    toolName: toolName ?? "tool",
     content: [{ type: "text", text: "..." }],
     isError: false,
   };
@@ -876,5 +880,241 @@ describe("resolveCheckpoint — spec/06 §6 + mapping + compaction-refuse + defe
     expectTypeOf(resolveCheckpoint([], [], "x")).toEqualTypeOf<{ remove: number[] } | null>();
     const ok = resolveCheckpoint([user("u")], [labelEntry("eL", "e1", "x"), entry("e1", "message")], "x");
     expectTypeOf(ok).toEqualTypeOf<{ remove: number[] } | null>();
+  });
+});
+
+// ── applyRewind (spec/10 §1.4) ────────────────────────────────────────────────────────────────────
+
+describe("applyRewind — spec/10 §1.4 (gap-closed removal, pairing intact, idempotent)", () => {
+  it("removing a toolGroup's indices keeps pairing (spec/06 §3/§4)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asst("c2"), result("c2")];
+    const out = applyRewind(msgs, [3, 4]);
+    expect(out).toHaveLength(3);
+    expect(out[0].role).toBe("user");
+    expect(out[1].role).toBe("assistant");
+    expect(out[2].role).toBe("toolResult");
+    const units = partitionIntoUnits(out);
+    expectPairingInvariant(out, units);
+  });
+
+  it("removing a range keeps mulligan:note at tail and preserves pairing", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("c0"), result("c0"),
+      user("u1"), asst("c1"), result("c1"), asst("c2"), result("c2"), custom("mulligan:note"),
+    ];
+    // remove the last toolGroup (c2)
+    const out = applyRewind(msgs, [6, 7]);
+    expect(out).toHaveLength(7);
+    expect(out[3].role).toBe("user");
+    expect(out[6].role).toBe("custom"); // mulligan:note survives
+    const units = partitionIntoUnits(out);
+    expectPairingInvariant(out, units);
+  });
+
+  it("empty remove → SAME ref (idempotent — spec/10 §1.4)", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(applyRewind(msgs, [])).toBe(msgs);
+    expect(applyRewind(msgs, [])).toBe(msgs);
+  });
+
+  it("non-array messages → []", () => {
+    expect(applyRewind(null as unknown as MessageLike[], [])).toEqual([]);
+    expect(applyRewind(undefined as unknown as MessageLike[], [])).toEqual([]);
+  });
+
+  it("non-array remove → SAME ref (no throw)", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(applyRewind(msgs, null as unknown as number[])).toBe(msgs);
+    expect(applyRewind(msgs, "x" as unknown as number[])).toBe(msgs);
+  });
+
+  it("remove with NaN / non-number → ignored (SAME ref)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    expect(applyRewind(msgs, [NaN])).toBe(msgs); // NaN excluded
+    expect(applyRewind(msgs, ["x" as unknown as number])).toBe(msgs);
+  });
+
+  it("out-of-range indices are harmlessly skipped (new array but same content)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    const out = applyRewind(msgs, [100]);
+    expect(out).toEqual(msgs); // same content
+    expect(out).not.toBe(msgs); // but new array (filter ran)
+  });
+
+  it("does not mutate input", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    const snapshot = JSON.stringify(msgs);
+    applyRewind(msgs, [1, 2]);
+    expect(JSON.stringify(msgs)).toBe(snapshot);
+  });
+
+  it("output is contiguous (gap-closed, no holes)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("a"), result("a"), asst("b"), result("b"), user("u1")];
+    const out = applyRewind(msgs, [2, 4]); // remove result(a) and result(b)
+    expect(out).toHaveLength(4);
+    expect(out.map((m) => m.role)).toEqual(["user", "assistant", "assistant", "user"]);
+  });
+
+  it("never throws on adversarial input (E13)", () => {
+    const msgs = [null, undefined, 42] as unknown as MessageLike[];
+    expect(() => applyRewind(msgs, [0, 1, 2])).not.toThrow();
+    expect(() => applyRewind(msgs, [])).not.toThrow();
+  });
+
+  it("returns MessageLike[]", () => {
+    expectTypeOf(applyRewind([], [])).toEqualTypeOf<MessageLike[]>();
+  });
+});
+
+// ── resolveShrinkTarget (spec/06 §5; spec/04 §4) ──────────────────────────────────────────────────
+
+describe("resolveShrinkTarget — three matcher strategies + null/no-match", () => {
+  it("by_tool_call_id → first toolResult with that id", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asst("c2"), result("c2")];
+    expect(resolveShrinkTarget(msgs, { by_tool_call_id: "c2" })).toBe(4);
+    expect(resolveShrinkTarget(msgs, { by_tool_call_id: "c1" })).toBe(2);
+  });
+
+  it("by_tool_call_id → null when id not found", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(resolveShrinkTarget(msgs, { by_tool_call_id: "nope" })).toBeNull();
+  });
+
+  it("by_tool_name + last → last matching toolResult", () => {
+    const msgs: MessageLike[] = [
+      asst("r1"), result("r1", "read"),
+      asst("r2"), result("r2", "read"),
+      asst("r3"), result("r3", "bash"),
+    ];
+    expect(resolveShrinkTarget(msgs, { by_tool_name: "read", occurrence: "last" })).toBe(3); // second read result
+  });
+
+  it("by_tool_name + first → first matching toolResult", () => {
+    const msgs: MessageLike[] = [
+      asst("r1"), result("r1", "read"),
+      asst("r2"), result("r2", "read"),
+    ];
+    expect(resolveShrinkTarget(msgs, { by_tool_name: "read", occurrence: "first" })).toBe(1);
+  });
+
+  it("by_tool_name occurrence missing → defaults to last", () => {
+    const msgs: MessageLike[] = [
+      asst("r1"), result("r1", "read"),
+      asst("r2"), result("r2", "read"),
+    ];
+    expect(resolveShrinkTarget(msgs, { by_tool_name: "read" } as ShrinkTarget)).toBe(3);
+  });
+
+  it("by_content_includes → first message ANY role whose content includes substring (E19)", () => {
+    const msgs: MessageLike[] = [
+      user("find me"),
+      asstText("thinking"),
+      result("c1"),
+    ];
+    expect(resolveShrinkTarget(msgs, { by_content_includes: "find me" })).toBe(0); // user message
+    expect(resolveShrinkTarget(msgs, { by_content_includes: "thinking" })).toBe(1); // assistant
+  });
+
+  it("by_content_includes works with array content (JSON stringify)", () => {
+    const msgs: MessageLike[] = [
+      { role: "assistant", content: [{ type: "text", text: "error: ENOSPC" }] } as MessageLike,
+    ];
+    expect(resolveShrinkTarget(msgs, { by_content_includes: "ENOSPC" })).toBe(0);
+  });
+
+  it("no match → null", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(resolveShrinkTarget(msgs, { by_tool_call_id: "x" })).toBeNull();
+    expect(resolveShrinkTarget(msgs, { by_tool_name: "read" } as unknown as ShrinkTarget)).toBeNull();
+    expect(resolveShrinkTarget(msgs, { by_content_includes: "nope" })).toBeNull();
+  });
+
+  it("non-array messages → null; non-record target → null", () => {
+    expect(resolveShrinkTarget(null as unknown as MessageLike[], { by_tool_call_id: "x" })).toBeNull();
+    expect(resolveShrinkTarget([], null as unknown as ShrinkTarget)).toBeNull();
+  });
+
+  it("empty/missing discriminator → null", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(resolveShrinkTarget(msgs, {} as unknown as ShrinkTarget)).toBeNull();
+    expect(resolveShrinkTarget(msgs, { by_tool_call_id: "" })).toBeNull();
+    expect(resolveShrinkTarget(msgs, { by_tool_name: "" } as unknown as ShrinkTarget)).toBeNull();
+  });
+
+  it("never throws (E13)", () => {
+    const trap = new Proxy({}, { get() { throw new Error("trap"); } }) as unknown as MessageLike;
+    expect(() => resolveShrinkTarget([trap], { by_tool_call_id: "x" })).not.toThrow();
+    expect(() => resolveShrinkTarget([trap], { by_content_includes: "x" })).not.toThrow();
+  });
+
+  it("returns number | null", () => {
+    expectTypeOf(resolveShrinkTarget([], { by_tool_call_id: "x" })).toEqualTypeOf<number | null>();
+  });
+});
+
+// ── applyShrink (spec/06 §5; spec/08 E8/E17/E19) ──────────────────────────────────────────────────
+
+describe("applyShrink — content substitution, field preservation, no-op, last-wins", () => {
+  it("by_tool_call_id match → content replaced, role/toolCallId/toolName/isError PRESERVED", () => {
+    const msgs: MessageLike[] = [asst("c1"), result("c1")];
+    const out = applyShrink(msgs, { target: { by_tool_call_id: "c1" }, replacement: "[shrunk]" });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toBe(msgs[0]); // assistant copied by reference
+    expect(out[1]).not.toBe(msgs[1]); // result replaced
+    expect(out[1].role).toBe("toolResult");
+    expect(out[1].toolCallId).toBe("c1");
+    expect(out[1].toolName).toBe("tool");
+    expect(out[1].isError).toBe(false);
+    expect(out[1].content).toEqual([{ type: "text", text: "[shrunk]" }]);
+  });
+
+  it("no match → SAME ref (toBe)", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(applyShrink(msgs, { target: { by_tool_call_id: "x" }, replacement: "r" })).toBe(msgs);
+  });
+
+  it("two shrinks same target → seq order LAST wins (E17)", () => {
+    const msgs: MessageLike[] = [asst("c1"), result("c1")];
+    const out1 = applyShrink(msgs, { target: { by_tool_call_id: "c1" }, replacement: "first" });
+    const out2 = applyShrink(out1, { target: { by_tool_call_id: "c1" }, replacement: "second" });
+    const text = (out2[1].content as Array<{ type: string; text: string }>)[0].text;
+    expect(text).toBe("second"); // LAST wins
+  });
+
+  it("shrink on non-toolResult (by_content_includes hitting a user msg) → role preserved (E19)", () => {
+    const msgs: MessageLike[] = [user("hello world")];
+    const out = applyShrink(msgs, { target: { by_content_includes: "hello" }, replacement: "[shrunk]" });
+    expect(out).toHaveLength(1);
+    expect(out[0].role).toBe("user"); // role preserved
+    expect(out[0].content).toEqual([{ type: "text", text: "[shrunk]" }]);
+  });
+
+  it("non-array messages → []", () => {
+    expect(applyShrink(null as unknown as MessageLike[], { target: { by_tool_call_id: "x" }, replacement: "r" })).toEqual([]);
+  });
+
+  it("non-record marker → SAME ref (no throw)", () => {
+    const msgs: MessageLike[] = [user("u")];
+    expect(applyShrink(msgs, null as unknown as { target: ShrinkTarget; replacement: string })).toBe(msgs);
+  });
+
+  it("throwing-Proxy matched msg → never throws (try/catch fallback)", () => {
+    const trap: MessageLike = new Proxy(
+      { role: "toolResult", toolCallId: "c1", toolName: "t", content: "x", isError: false } as MessageLike,
+      new Proxy({}, { get() { throw new Error("trap"); } }),
+    );
+    // resolveShrinkTarget reads toolCallId — the Proxy throws on .toolCallId read → readOwn catches → no match → same ref
+    expect(() => applyShrink([trap], { target: { by_tool_call_id: "c1" }, replacement: "r" })).not.toThrow();
+  });
+
+  it("does not mutate input", () => {
+    const msgs: MessageLike[] = [asst("c1"), result("c1")];
+    const snapshot = JSON.stringify(msgs);
+    applyShrink(msgs, { target: { by_tool_call_id: "c1" }, replacement: "r" });
+    expect(JSON.stringify(msgs)).toBe(snapshot);
+  });
+
+  it("returns MessageLike[]", () => {
+    expectTypeOf(applyShrink([], { target: { by_tool_call_id: "x" }, replacement: "r" })).toEqualTypeOf<MessageLike[]>();
   });
 });
