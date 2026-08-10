@@ -151,14 +151,14 @@
               "id": "P1.M2.T3",
               "type": "Task",
               "title": "Note rendering & validation (notes.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Render the structured mulligan:note (the confabulation defense — D17) from NoteInput + FileLedger, validate all four fields non-empty, and produce the nudge reminder/drift renderers.",
               "subtasks": [
                 {
                   "id": "P1.M2.T3.S1",
                   "type": "Subtask",
                   "title": "validateNote + renderNote + renderBloatReminder + renderDriftNudge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S1",
