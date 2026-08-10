@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M4.T4.S1_1786362109579_pre-execution_30e1324f",
+      "taskId": "P1.M4.T4.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M4_T4_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-10T11:41:49.579Z"
+      },
+      "createdAt": "2026-08-10T11:41:49.579Z"
+    },
+    {
+      "id": "P1.M4.T4.S1_1786362342388_coder-response_1c93604b",
+      "taskId": "P1.M4.T4.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M4_T4_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All clean. Here's the completion result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Successfully implemented mulligan_audit tool. All 4 validation gates pass:\\n\\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\\n\\n**Files created/modified:**\\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\\n\\n**Key design decisions honored:**\\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\\n- E13: Whole body in ONE try/catch — never throws\\n- E14: Config gate BEFORE session access\\n- E16: Fallback path with confidence \\\"low\\\", no crash\\n- No pi.* calls, no factory, no modifications to shipped modules\\n- All .js imports, defensive helpers, details on every path\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "Successfully implemented mulligan_audit tool. All 4 validation gates pass:\n\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\n\n**Files created/modified:**\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\n\n**Key design decisions honored:**\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\n- E13: Whole body in ONE try/catch — never throws\n- E14: Config gate BEFORE session access\n- E16: Fallback path with confidence \"low\", no crash\n- No pi.* calls, no factory, no modifications to shipped modules\n- All .js imports, defensive helpers, details on every path"
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-10T11:45:42.388Z"
+      },
+      "createdAt": "2026-08-10T11:45:42.388Z"
+    },
+    {
+      "id": "P1.M4.T4.S1_1786362348505_validation-gate-4_1416e4bf",
+      "taskId": "P1.M4.T4.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M4_T4_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All clean. Here's the completion result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Successfully implemented mulligan_audit tool. All 4 validation gates pass:\\n\\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\\n\\n**Files created/modified:**\\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\\n\\n**Key design decisions honored:**\\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\\n- E13: Whole body in ONE try/catch — never throws\\n- E14: Config gate BEFORE session access\\n- E16: Fallback path with confidence \\\"low\\\", no crash\\n- No pi.* calls, no factory, no modifications to shipped modules\\n- All .js imports, defensive helpers, details on every path\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "Successfully implemented mulligan_audit tool. All 4 validation gates pass:\n\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\n\n**Files created/modified:**\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\n\n**Key design decisions honored:**\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\n- E13: Whole body in ONE try/catch — never throws\n- E14: Config gate BEFORE session access\n- E16: Fallback path with confidence \"low\", no crash\n- No pi.* calls, no factory, no modifications to shipped modules\n- All .js imports, defensive helpers, details on every path"
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/tools/audit.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/tools/audit.test.ts  (40 tests) 13ms\n\n Test Files  1 passed (1)\n      Tests  40 passed (40)\n   Start at  07:45:45\n   Duration  867ms (transform 104ms, setup 0ms, collect 533ms, tests 13ms, environment 0ms, prepare 160ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/runtime.test.ts  (17 tests) 6ms\n ✓ test/notes.test.ts  (71 tests) 13ms\n ✓ test/ledger.test.ts  (39 tests) 15ms\n ✓ test/nudges.test.ts  (26 tests) 6ms\n ✓ test/drift_nudge.test.ts  (9 tests) 6ms\n ✓ test/markers.test.ts  (42 tests) 14ms\n ✓ test/config.test.ts  (24 tests) 16ms\n ✓ test/turn_metric.test.ts  (17 tests) 10ms\n ✓ test/transforms.test.ts  (118 tests) 25ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/tokens.test.ts  (51 tests) 36ms\n ✓ test/pipeline.test.ts  (33 tests) 36ms\n ✓ test/log.test.ts  (15 tests) 33ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 9ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/tools/audit.test.ts  (40 tests) 13ms\n\n Test Files  18 passed (18)\n      Tests  594 passed (594)\n   Start at  07:45:47\n   Duration  1.29s (transform 2.34s, setup 1ms, collect 6.26s, tests 277ms, environment 3ms, prepare 2.15s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T11:45:48.505Z"
+      },
+      "createdAt": "2026-08-10T11:45:48.505Z"
+    },
+    {
+      "id": "P1.M4.T4.S1_1786362348506_complete_e8d0264d",
+      "taskId": "P1.M4.T4.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M4_T4_S1.md",
+        "stage": "complete",
+        "coderResponse": "All clean. Here's the completion result:\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"Successfully implemented mulligan_audit tool. All 4 validation gates pass:\\n\\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\\n\\n**Files created/modified:**\\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\\n\\n**Key design decisions honored:**\\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\\n- E13: Whole body in ONE try/catch — never throws\\n- E14: Config gate BEFORE session access\\n- E16: Fallback path with confidence \\\"low\\\", no crash\\n- No pi.* calls, no factory, no modifications to shipped modules\\n- All .js imports, defensive helpers, details on every path\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "Successfully implemented mulligan_audit tool. All 4 validation gates pass:\n\n**Level 1 (TypeScript)**: `npx tsc --noEmit` — zero errors.\n**Level 2 (Unit Tests)**: `npx vitest run test/tools/audit.test.ts` — 40/40 tests pass.\n**Level 3 (Full Suite)**: `npx vitest run` — 594/594 tests pass (18 files, zero regressions).\n**Level 4**: Deferred (requires wiring in P1.M7.T1.S1).\n\n**Files created/modified:**\n- `src/tools/audit.ts` — replaced `export {};` stub with full implementation (~300 LOC). Exports: AuditParams, AuditArgs, AUDIT_DESC, AuditRow, AuditDetails, renderAuditReport, describeMessage, buildCallLookup, messageBytes, listCheckpoints, auditTool. Plain `export const auditTool` (NO pi factory — CRITICAL DECISION).\n- `test/tools/audit.test.ts` — 40 tests covering: registration metadata, cached-path happy path, E16 fallback path, top-N, suggestion naming/omission, bloat flag boundary (8192 vs 8193), active markers + checkpoints, config-disabled refusal (E14), never-throws (E13), details-on-every-path, D5 guard, pure renderer cases, pure helper cases, type assertions.\n\n**Key design decisions honored:**\n- D5: Total computed from FILTERED view via estimateTokens, NEVER ctx.getContextUsage()\n- E13: Whole body in ONE try/catch — never throws\n- E14: Config gate BEFORE session access\n- E16: Fallback path with confidence \"low\", no crash\n- No pi.* calls, no factory, no modifications to shipped modules\n- All .js imports, defensive helpers, details on every path"
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/tools/audit.test.ts",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/tools/audit.test.ts  (40 tests) 13ms\n\n Test Files  1 passed (1)\n      Tests  40 passed (40)\n   Start at  07:45:45\n   Duration  867ms (transform 104ms, setup 0ms, collect 533ms, tests 13ms, environment 0ms, prepare 160ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/runtime.test.ts  (17 tests) 6ms\n ✓ test/notes.test.ts  (71 tests) 13ms\n ✓ test/ledger.test.ts  (39 tests) 15ms\n ✓ test/nudges.test.ts  (26 tests) 6ms\n ✓ test/drift_nudge.test.ts  (9 tests) 6ms\n ✓ test/markers.test.ts  (42 tests) 14ms\n ✓ test/config.test.ts  (24 tests) 16ms\n ✓ test/turn_metric.test.ts  (17 tests) 10ms\n ✓ test/transforms.test.ts  (118 tests) 25ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/tokens.test.ts  (51 tests) 36ms\n ✓ test/pipeline.test.ts  (33 tests) 36ms\n ✓ test/log.test.ts  (15 tests) 33ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 9ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/tools/audit.test.ts  (40 tests) 13ms\n\n Test Files  18 passed (18)\n      Tests  594 passed (594)\n   Start at  07:45:47\n   Duration  1.29s (transform 2.34s, setup 1ms, collect 6.26s, tests 277ms, environment 3ms, prepare 2.15s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-10T11:45:48.506Z"
+      },
+      "createdAt": "2026-08-10T11:45:48.506Z"
+    }
+  ],
+  "lastModified": "2026-08-10T11:45:48.506Z"
+}

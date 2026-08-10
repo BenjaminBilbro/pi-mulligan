@@ -315,7 +315,7 @@
           "id": "P1.M4",
           "type": "Milestone",
           "title": "Agent-Callable Tools (the API the LLM uses)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The four registered tools with stable names/descriptions/parameter shapes (LLM reliability depends on these). Thin execute() wrappers: validate → write marker(s)/note via markers.ts → return a text result. Never throw; never read event.messages (EXCEPTION: mulligan_audit reads runtime.lastFiltered, read-only).",
           "tasks": [
             {
@@ -390,14 +390,14 @@
               "id": "P1.M4.T4",
               "type": "Task",
               "title": "mulligan_audit tool (tools/audit.ts) — the read-only exception",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Reports a token breakdown of the FILTERED view (what the model actually sees — NEVER ctx.getContextUsage() which counts hidden tokens, D5), flags the biggest contributors, and lists active markers. Closes the feedback loop so rewind/shrink decisions are informed.",
               "subtasks": [
                 {
                   "id": "P1.M4.T4.S1",
                   "type": "Subtask",
                   "title": "mulligan_audit execute(): read lastFiltered → estimateTokens → render markdown report",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T2.S1",
