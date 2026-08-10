@@ -322,14 +322,14 @@
               "id": "P1.M4.T1",
               "type": "Task",
               "title": "mulligan_rewind tool (tools/rewind.ts)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The flagship tool. Validates the 4-field note, extracts the FileLedger over the target span (the single read-only exception), persists marker+note, enforces depth guard + protected-message guard, and appends a mutation warning when the span had side effects.",
               "subtasks": [
                 {
                   "id": "P1.M4.T1.S1",
                   "type": "Subtask",
                   "title": "mulligan_rewind execute(): validate → ledger → persist marker+note → mutation warning + depth guard",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S1",

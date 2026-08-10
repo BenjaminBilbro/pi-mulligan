@@ -1,0 +1,46 @@
+[
+  {
+    "level": 1,
+    "description": "Level 1 gate",
+    "success": true,
+    "command": "npx tsc --noEmit",
+    "stdout": "",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 2,
+    "description": "Level 2 gate",
+    "success": true,
+    "command": "npx vitest run test/tools/rewind.test.ts",
+    "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/tools/rewind.test.ts  (29 tests) 11ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  07:12:19\n   Duration  842ms (transform 80ms, setup 0ms, collect 505ms, tests 11ms, environment 0ms, prepare 153ms)\n\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 3,
+    "description": "Level 3 gate",
+    "success": true,
+    "command": "pi -e ./src/index.ts -p hi",
+    "stdout": "Hi! What can I help you with today?\n\nI'm in `/home/dustin/projects/pi-mulligan-hack`. Let me know what you'd like to work on.\n",
+    "stderr": "",
+    "exitCode": 0,
+    "skipped": false,
+    "timedOut": false
+  },
+  {
+    "level": 4,
+    "description": "Level 4 gate",
+    "success": true,
+    "command": null,
+    "stdout": "",
+    "stderr": "",
+    "exitCode": null,
+    "skipped": true,
+    "timedOut": false
+  }
+]
