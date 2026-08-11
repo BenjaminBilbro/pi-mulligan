@@ -174,14 +174,14 @@
               "id": "P1.M4.T1",
               "type": "Task",
               "title": "Content-asserting composition regression suite (multi-rewind + multi-shrink end-to-end)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The existing suite checked roles only, which masked BUG-001/BUG-003. Add a dedicated describe block that asserts on message CONTENT/identity for the cross-cutting compositions: a stacked rewind+shrink session, a 2+-user nuclear last_turn followed by a shrink, and a checkpoint-then-shrink. These lock the fixed invariants as first-class regression coverage.",
               "subtasks": [
                 {
                   "id": "P1.M4.T1.S1",
                   "type": "Subtask",
                   "title": "Add the composition regression describe block (content + identity assertions)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S2",
