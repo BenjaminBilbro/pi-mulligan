@@ -407,8 +407,8 @@ describe("E3 — protected message → tool refuses + filter no-ops (spec/08 E3)
       to_previous_prompt: true,
     }, undefined, undefined, ctx);
     const text = firstText(result as unknown as AgentToolResult<unknown>);
-    // Tool succeeds but K=0 (nothing matched to hide)
-    expect(text).toContain("nothing matched to hide");
+    // Tool REFUSES before persisting (step 5b — BUG-006 fix: nuclear last_turn across first user message)
+    expect(text).toContain("would cross a protected message");
   });
 
   it("protectedOk returns false when remove includes the first user index", () => {

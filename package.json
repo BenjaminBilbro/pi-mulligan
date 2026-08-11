@@ -19,6 +19,6 @@
   },
   "scripts": {
     "test": "vitest run",
-    "smoke": "pi -ne -e ./src/index.ts -p \"hi\""
+    "smoke": "node test/integration/run-smoke.mjs"
   }
 }

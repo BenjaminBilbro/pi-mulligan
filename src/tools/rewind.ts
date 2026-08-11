@@ -379,6 +379,19 @@ async function rewindExecute(
       k = 0;
     }
 
+    // (5b) protected-refusal check — spec/08 E3 ("the tool refuses before persisting") + spec/10 §2.1 F-protected
+    //      ("no marker created"). resolveLastTurn returns { remove: [] } when nuclear last_turn would cross
+    //      the first/only user message (iFirstUser === iLastUser); resolvePreview surfaces that as k === 0.
+    //      Refuse HERE, before renderNote/persist, so a nuclear last_turn across the first user message refuses
+    //      instead of persisting a no-op marker + stray note (BUG-006). NARROWLY SCOPED: the three-way AND
+    //      excludes every legitimate K=0 — last_tool_call_group and default last_turn stay on success path.
+    if (granularity === "last_turn" && params.to_previous_prompt === true && k === 0) {
+      return refusal(
+        "would cross a protected message (to_previous_prompt would rewind across the first/only user message — the original task)",
+        "last_turn",
+      );
+    }
+
     // (6) render note (step 6 — note already validated by step 2; renderNote does NOT re-validate).
     const rendered = renderNote(
       (params.note as NoteInput) ?? ({} as NoteInput),

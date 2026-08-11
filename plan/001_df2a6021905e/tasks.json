@@ -469,14 +469,14 @@
               "id": "P1.M5.T3",
               "type": "Task",
               "title": "Integration smoke harness (test/integration/smoke.ts + scenarios.md)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Adapt spec/reference/looper-smoke.proto.ts (rename looper_* → mulligan_*) into the Mulligan module layout; drive real `pi -e ./src/index.ts -p \"…\"` runs and assert on a structured JSONL log + session JSONL for all 9 F-* scenarios (spec/10 §2.1).",
               "subtasks": [
                 {
                   "id": "P1.M5.T3.S1",
                   "type": "Subtask",
                   "title": "Smoke harness + run-smoke driver + the 9 F-* scenarios (F-rewind-core … F-reload)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M5.T1.S1",
