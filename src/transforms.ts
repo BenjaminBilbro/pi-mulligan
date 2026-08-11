@@ -755,13 +755,14 @@ function readOwnSeq(marker: unknown): number {
 
 /**
  * protectedOk — the FILTER's defense-in-depth check for a rewind's removal set (spec/06 §8). Returns true when
- * the rewind is ALLOWED to remove; false when it must be SKIPPED. Enforces first:user: min(remove) > iFirstUser.
- * Empty/non-array remove → true (vacuous); non-array messages → true. Config omitting "first:user" from
- * protectedRoles → true (disabled). Malformed/missing config → enforce (fail safe). NEVER throws (E13).
+ * the rewind is ALLOWED to remove; false when it must be SKIPPED. Enforces first:user (min(remove) > iFirstUser)
+ * and latest:user (remove must not contain iLatestUser). Empty/non-array remove → true (vacuous); non-array messages →
+ * true. Config omitting a selector from protectedRoles → that selector disabled. Malformed/missing config → enforce
+ * both selectors (fail safe). NEVER throws (E13).
  *
  * @param messages the CURRENT message list; non-array → true (vacuous)
  * @param remove the rewind's removal index set; empty/non-array → true
- * @param config the config slice; missing/malformed → enforce first:user (fail safe)
+ * @param config the config slice; missing/malformed → enforce both selectors (fail safe)
  * @returns true if the rewind may proceed; false if it must be skipped
  */
 export function protectedOk(
@@ -772,29 +773,38 @@ export function protectedOk(
   if (!Array.isArray(remove) || remove.length === 0) return true;
   if (!Array.isArray(messages)) return true;
 
-  let protectFirstUser = true;
   const rewindCfg = isRecord(config) ? readOwn(config, "rewind") : undefined;
   const roles = isRecord(rewindCfg) ? readOwn(rewindCfg, "protectedRoles") : undefined;
-  if (Array.isArray(roles) && roles.length > 0) {
-    protectFirstUser = roles.some((r) => r === "first:user");
-  }
-  if (!protectFirstUser) return true;
+  const hasRoles = Array.isArray(roles) && roles.length > 0;
+  const protectFirstUser = !hasRoles || roles.some((r) => r === "first:user");
+  const protectLatestUser = !hasRoles || roles.some((r) => r === "latest:user");
 
-  let iFirstUser = -1;
-  for (let i = 0; i < messages.length; i++) {
-    if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") {
-      iFirstUser = i;
-      break;
+  if (protectFirstUser) {
+    let iFirstUser = -1;
+    for (let i = 0; i < messages.length; i++) {
+      if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") {
+        iFirstUser = i;
+        break;
+      }
+    }
+    if (iFirstUser !== -1) {
+      let minRemove = Infinity;
+      for (const r of remove) {
+        if (typeof r === "number" && !Number.isNaN(r) && r < minRemove) minRemove = r;
+      }
+      if (Number.isFinite(minRemove) && minRemove <= iFirstUser) return false;
     }
   }
-  if (iFirstUser === -1) return true;
 
-  let minRemove = Infinity;
-  for (const r of remove) {
-    if (typeof r === "number" && !Number.isNaN(r) && r < minRemove) minRemove = r;
+  if (protectLatestUser) {
+    let iLatestUser = -1;
+    for (let i = 0; i < messages.length; i++) {
+      if (isRecord(messages[i]) && readOwn(messages[i], "role") === "user") iLatestUser = i;
+    }
+    if (iLatestUser !== -1 && remove.some((r) => r === iLatestUser)) return false;
   }
-  if (!Number.isFinite(minRemove)) return true;
-  return minRemove > iFirstUser;
+
+  return true;
 }
 
 // ── filterPipeline (granularity dispatch ONLY — spec/06 §1/§5/§8/§11/§12; spec/03 §5) ──────────────────

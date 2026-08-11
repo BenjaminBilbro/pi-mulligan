@@ -219,9 +219,9 @@ describe("protectedOk — spec/06 §8", () => {
     expect(protectedOk(null as unknown as MessageLike[], [0], cfg)).toBe(true);
   });
 
-  it("protectedRoles omitting first:user → true (disabled)", () => {
+  it("protectedRoles omitting first:user → first:user not enforced (true)", () => {
     const cfgDisabled: ProtectedConfig = { rewind: { protectedRoles: ["latest:user"] } };
-    const msgs: MessageLike[] = [user("u0"), asst("c"), result("c")];
+    const msgs: MessageLike[] = [user("u0"), asst("c"), result("c"), user("u1")];
     expect(protectedOk(msgs, [0], cfgDisabled)).toBe(true);
   });
 
@@ -243,6 +243,31 @@ describe("protectedOk — spec/06 §8", () => {
 
   it("returns boolean", () => {
     expectTypeOf(protectedOk([], [], undefined)).toEqualTypeOf<boolean>();
+  });
+
+  // ── latest:user contract tests (BUG-003 filter layer) ──────────────────────────────────────────
+
+  it("(a) checkpoint-style remove containing iLatestUser → false", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c"), result("c"), user("u1 LATEST"), asst("work")];
+    expect(protectedOk(msgs, [3], cfg)).toBe(false);
+    expect(protectedOk(msgs, [3, 4], cfg)).toBe(false);
+  });
+
+  it("(b) remove NOT containing iLatestUser → true", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c"), result("c"), user("u1 LATEST")];
+    expect(protectedOk(msgs, [1], cfg)).toBe(true);
+    expect(protectedOk(msgs, [1, 2], cfg)).toBe(true);
+  });
+
+  it("(c) config omitting latest:user → not enforced (true)", () => {
+    const cfgNoLatest: ProtectedConfig = { rewind: { protectedRoles: ["first:user"] } };
+    const msgs: MessageLike[] = [user("u0"), asst("c"), user("u1 LATEST")];
+    expect(protectedOk(msgs, [2], cfgNoLatest)).toBe(true);
+  });
+
+  it("(d) single user (iFirstUser===iLatestUser) + remove contains it → false", () => {
+    const msgs: MessageLike[] = [user("only"), asst("c"), result("c")];
+    expect(protectedOk(msgs, [0], cfg)).toBe(false);
   });
 });
 
