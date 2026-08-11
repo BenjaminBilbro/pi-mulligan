@@ -11,7 +11,7 @@
           "id": "P1.M1",
           "type": "Milestone",
           "title": "Configuration system wiring (BUG-001 critical + BUG-006 minor)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The entire configuration surface is inert (setConfig is dead code; getConfig always returns DEFAULT_CONFIG). Pi's ExtensionAPI exposes no settings accessor, so the only way to honor spec/09 §1 + README §3 is to read settings.json from disk. This milestone wires a new disk-reading+merge helper and calls setConfig at factory load AND on every session_start (which also fires on /reload — fixing BUG-006 in the same change). Outcome: every documented knob (enabled, thresholds, maxDepth, log.file, …) is honored, and mulligan.enabled=false makes all four tools refuse cleanly.",
           "tasks": [
             {
@@ -49,7 +49,7 @@
               "id": "P1.M1.T2",
               "type": "Task",
               "title": "Wire index.ts — setConfig at factory load + every session_start (fixes BUG-001 load + BUG-006 reload)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Call setConfig(loadMulliganSettings(...)) at factory time (global best-effort, no cwd yet) and inside the session_start handler (full read with ctx.cwd + ctx.isProjectTrusted()) for EVERY reason — session_start already fires on /reload, so this single wiring fixes both BUG-001 (never read) and BUG-006 (not re-read on reload). The existing resetRuntime call stays. The headline proof: mulligan.enabled=false in .pi/settings.json makes all four tools refuse.",
               "subtasks": [
                 {
@@ -68,7 +68,7 @@
                   "id": "P1.M1.T2.S2",
                   "type": "Subtask",
                   "title": "Integration test — enabled=false disables all four tools (BUG-001 headline proof)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"
