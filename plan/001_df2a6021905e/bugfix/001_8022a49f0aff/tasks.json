@@ -4,7 +4,7 @@
       "id": "P1",
       "type": "Phase",
       "title": "Rewind/Shrink/Audit Edge-Case Correctness (TEST_RESULTS.md mini-PRD)",
-      "status": "Ready",
+      "status": "Complete",
       "description": "Fix the five bugs found by adversarial filterPipeline/tool probes (BUG-001…BUG-005). All live in the rewind/shrink targeting + protection layer: two MAJOR rewind-protection failures (to_previous_prompt silently no-ops; checkpoint-crosses-latest partially applies), two MINOR composition defects (live last_tool_call_group fallback inverts; by_content_includes multi-shrink violates last-wins), and one COSMETIC bloat-threshold operator mismatch. The prior round's 8 bugs (config wiring, branch scoping, null-checks, audit suggestion) are already fixed in source — this phase is purely the new round. Implicit-TDD throughout: each subtask writes the failing test → implements → passes. Success = the full 697-test suite stays GREEN with the fixed behavior, plus new content-asserting regression tests for every bug.",
       "milestones": [
         {
@@ -167,7 +167,7 @@
           "id": "P1.M4",
           "type": "Milestone",
           "title": "Cross-cutting regression coverage + changeset-level docs sync",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Mode B (changeset-level) closeout. A dedicated composition regression suite locks the multi-rewind + multi-shrink end-to-end behavior across BUG-001…BUG-004 (the PRD's closing recommendation: assert on message CONTENT/identity, not just roles). Then a final docs pass verifies the README/spec-claim surface reflects the now-correct behavior. Depends on all implementing subtasks.",
           "tasks": [
             {
@@ -199,14 +199,14 @@
               "id": "P1.M4.T2",
               "type": "Task",
               "title": "Sync changeset-level documentation (Mode B)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "These are bugfixes — the README and spec docs already DESCRIBE the intended (now-fixed) behavior, so most claims become TRUE rather than needing rewrite. Verify the README's rewind/granularity/checkpoint sections and the bloat-threshold description match the fixed semantics; touch up only where a now-accurate claim was previously misleading or where the fixes introduced a behavioral nuance worth noting (e.g. checkpoint-crosses-latest now refuses).",
               "subtasks": [
                 {
                   "id": "P1.M4.T2.S1",
                   "type": "Subtask",
                   "title": "Verify + touch up README/spec-claim surface to match fixed semantics",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M4.T1.S1"
