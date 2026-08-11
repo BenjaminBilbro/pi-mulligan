@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1_M4_T1_S1_1786449170659_pre-execution_3c567f6d",
+      "taskId": "P1_M4_T1_S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T1_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T11:52:50.659Z"
+      },
+      "createdAt": "2026-08-11T11:52:50.659Z"
+    },
+    {
+      "id": "P1_M4_T1_S1_1786449346689_coder-response_e59fe131",
+      "taskId": "P1_M4_T1_S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T1_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All changes are confined to the 3 test/integration files. `mulligan_smoke_big` is untouched. No `src/` files modified. No M2 or M4.T3 regions touched.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\\n\\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\\n\\nChanges summary:\\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\n\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\n\nChanges summary:\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T11:55:46.689Z"
+      },
+      "createdAt": "2026-08-11T11:55:46.689Z"
+    },
+    {
+      "id": "P1_M4_T1_S1_1786449455460_validation-gate-4_0cbffdce",
+      "taskId": "P1_M4_T1_S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T1_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All changes are confined to the 3 test/integration files. `mulligan_smoke_big` is untouched. No `src/` files modified. No M2 or M4.T3 regions touched.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\\n\\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\\n\\nChanges summary:\\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\n\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\n\nChanges summary:\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/notes.test.ts  (71 tests) 10ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/transforms.test.ts  (130 tests) 20ms\n ✓ test/log.test.ts  (15 tests) 23ms\n ✓ test/pipeline.test.ts  (47 tests) 48ms\n ✓ test/ledger.test.ts  (39 tests) 15ms\n ✓ test/runtime.test.ts  (17 tests) 21ms\n ✓ test/turn_metric.test.ts  (17 tests) 13ms\n ✓ test/config.test.ts  (24 tests) 20ms\n ✓ test/drift_nudge.test.ts  (9 tests) 9ms\n ✓ test/settingsLoader.test.ts  (17 tests) 18ms\n ✓ test/markers.test.ts  (44 tests) 23ms\n ✓ test/nudges.test.ts  (26 tests) 11ms\n ✓ test/filter.test.ts  (17 tests) 16ms\n ✓ test/tokens.test.ts  (51 tests) 47ms\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 786ms\n ✓ test/tools/rewind.test.ts  (36 tests) 19ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/branch-isolation.test.ts  (4 tests) 8ms\n ✓ test/edge-cases.test.ts  (35 tests) 22ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 8ms\n ✓ test/index.test.ts  (6 tests) 851ms\n ✓ test/tools/audit.test.ts  (45 tests) 82ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  07:55:49\n   Duration  1.63s (transform 2.68s, setup 3ms, collect 9.61s, tests 2.08s, environment 4ms, prepare 3.11s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\n  ⚠ SOFT: seed hiding not verified (hideEntryIds not yet implemented — live last_turn resolution moved the target)\n  ⚠ SOFT: seed hiding requires hideEntryIds pinning (later task); live last_turn resolution at filter time targets the current last user message, not the rewind-time one — see scenarios.md\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\n  ⚠ SOFT: hasNudge:true requires a >3000-token turn (model-driven); see scenarios.md\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint rewind K=0 at filter time (hideEntryIds not yet implemented — live resolution may differ from rewind-time preview)\n  ⚠ SOFT: checkpoint seed hiding not verified (hideEntryIds not yet implemented — live resolution differs)\n  ⚠ SOFT: checkpoint not consumed (hideEntryIds not yet implemented — live resolution may not have triggered auto-expiry)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T11:57:35.460Z"
+      },
+      "createdAt": "2026-08-11T11:57:35.460Z"
+    },
+    {
+      "id": "P1_M4_T1_S1_1786449455461_complete_79249b51",
+      "taskId": "P1_M4_T1_S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T1_S1.md",
+        "stage": "complete",
+        "coderResponse": "All changes are confined to the 3 test/integration files. `mulligan_smoke_big` is untouched. No `src/` files modified. No M2 or M4.T3 regions touched.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\\n\\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\\n\\nChanges summary:\\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "BUG-007 F-shrink-preventive fix implemented successfully. All 4 validation gates pass:\n\n- Level 1 (tsc): Zero errors — smoke_read_big registration mirrors mulligan_smoke_big's type shape exactly.\n- Level 2 (vitest): 697 passed | 2 skipped — no unit regressions.\n- Level 3 (npm run smoke): 9/9 scenarios passed. F-shrink-preventive now HARD-asserts bloatHit:true from the session JSONL turn-metric. The old 'SOFT: bloatHit:true requires the model to call mulligan_smoke_big' line is gone.\n- Level 4 (scope review): Only 3 test/integration files changed (smoke.ts, run-smoke.mjs, scenarios.md). No src/ files modified. mulligan_smoke_big byte-for-byte unchanged. No M2/M4.T3 regions touched.\n\nChanges summary:\n1. smoke.ts: Added BLOAT_CANARY const + smoke_read_big tool registration (non-mulligan_* prefix, returns ~10KB > 8192 threshold) + updated F-shrink-preventive driveScenario to log that smoke_read_big is registered (no more useless local bigResult() call).\n2. run-smoke.mjs: Added F-shrink-preventive custom-prompts branch (second prompt: 'Call the smoke_read_big tool, then reply with exactly: OK') + upgraded assertShrinkPreventive to HARD-assert data.bloatHit === true + secondary assert bloatHits includes smoke_read_big. Removed soft field from return.\n3. scenarios.md: Rewrote F-shrink-preventive section from 'unprovable in this harness' to the new deterministic model-called smoke_read_big path with bloatHit:true HARD-asserted."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/notes.test.ts  (71 tests) 10ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/transforms.test.ts  (130 tests) 20ms\n ✓ test/log.test.ts  (15 tests) 23ms\n ✓ test/pipeline.test.ts  (47 tests) 48ms\n ✓ test/ledger.test.ts  (39 tests) 15ms\n ✓ test/runtime.test.ts  (17 tests) 21ms\n ✓ test/turn_metric.test.ts  (17 tests) 13ms\n ✓ test/config.test.ts  (24 tests) 20ms\n ✓ test/drift_nudge.test.ts  (9 tests) 9ms\n ✓ test/settingsLoader.test.ts  (17 tests) 18ms\n ✓ test/markers.test.ts  (44 tests) 23ms\n ✓ test/nudges.test.ts  (26 tests) 11ms\n ✓ test/filter.test.ts  (17 tests) 16ms\n ✓ test/tokens.test.ts  (51 tests) 47ms\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 786ms\n ✓ test/tools/rewind.test.ts  (36 tests) 19ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/branch-isolation.test.ts  (4 tests) 8ms\n ✓ test/edge-cases.test.ts  (35 tests) 22ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 8ms\n ✓ test/index.test.ts  (6 tests) 851ms\n ✓ test/tools/audit.test.ts  (45 tests) 82ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  07:55:49\n   Duration  1.63s (transform 2.68s, setup 3ms, collect 9.61s, tests 2.08s, environment 4ms, prepare 3.11s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\n  ⚠ SOFT: seed hiding not verified (hideEntryIds not yet implemented — live last_turn resolution moved the target)\n  ⚠ SOFT: seed hiding requires hideEntryIds pinning (later task); live last_turn resolution at filter time targets the current last user message, not the rewind-time one — see scenarios.md\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\n  ⚠ SOFT: hasNudge:true requires a >3000-token turn (model-driven); see scenarios.md\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint rewind K=0 at filter time (hideEntryIds not yet implemented — live resolution may differ from rewind-time preview)\n  ⚠ SOFT: checkpoint seed hiding not verified (hideEntryIds not yet implemented — live resolution differs)\n  ⚠ SOFT: checkpoint not consumed (hideEntryIds not yet implemented — live resolution may not have triggered auto-expiry)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T11:57:35.461Z"
+      },
+      "createdAt": "2026-08-11T11:57:35.461Z"
+    }
+  ],
+  "lastModified": "2026-08-11T11:57:35.461Z"
+}

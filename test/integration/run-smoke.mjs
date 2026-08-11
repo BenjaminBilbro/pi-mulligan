@@ -279,16 +279,23 @@ function assertShrinkPreventive({ smoke, piRes }) {
   const results = [];
   const sessionFile = smoke.sessionFile;
   const entries = readSessionEntries(sessionFile);
-  // Deterministic: the smoke_big log line fired + a turn-metric exists. bloatHit:true is model-driven (documented).
+  // Deterministic: the smoke_big log line fired + a turn-metric exists + bloatHit:true (HARD).
   assert(results, "tool.smoke_big logged", smoke.lines.some((l) => l.test === "tool.smoke_big"), "");
   if (entries.length > 0) {
     const turnMetrics = countCustom(entries, "mulligan:turn-metric", "turn-metric");
     assert(results, "JSONL has turn-metric (custom)", turnMetrics >= 1, `${turnMetrics} found`);
+    // HARD: assert bloatHit:true from the turn-metric data (BUG-007 fix — smoke_read_big is non-mulligan, model-called).
+    const tmEntries = entries.filter((e) => e.type === "custom" && e.customType === "mulligan:turn-metric");
+    const bloatHitTrue = tmEntries.some((e) => e && e.data && e.data.bloatHit === true);
+    assert(results, "turn-metric bloatHit:true (smoke_read_big fired the bloat reminder — HARD)", bloatHitTrue, bloatHitTrue ? "" : "no turn-metric with bloatHit:true — model may not have called smoke_read_big");
+    // Secondary: verify the bloat hit names smoke_read_big.
+    const namedTool = tmEntries.some((e) => Array.isArray(e && e.data && e.data.bloatHits) && e.data.bloatHits.some((h) => h && h.toolName === "smoke_read_big"));
+    assert(results, "turn-metric bloatHits includes smoke_read_big", namedTool, "");
     assertGlobalInvariants(results, entries);
   } else {
     console.log(`  ⚠ JSONL unavailable (model may have timed out) — smoke-log assertions are primary`);
   }
-  return { results, entries, soft: "bloatHit:true requires the model to call mulligan_smoke_big (model-driven); see scenarios.md" };
+  return { results, entries };
 }
 
 function assertNudgeDrift({ smoke, piRes }) {
@@ -456,6 +463,14 @@ function runScenario(scenario) {
         "Reply with exactly: OK",
       ],
     });
+    const smoke = parseSmokeLog(piRes.logPath);
+    return { piRes, smoke };
+  }
+  // F-shrink-preventive: 2-prompt flow where the second prompt makes the model CALL smoke_read_big (a non-mulligan_*
+  // tool whose result exceeds bloatThresholdBytes=8192). The real tool_result event fires bloatReminderHandler →
+  // turnEndMetricHandler records bloatHit:true. assertShrinkPreventive HARD-asserts bloatHit:true from the session JSONL.
+  if (scenario === "F-shrink-preventive") {
+    const piRes = runPi(scenario, { prompts: ["/mulligan_smoke F-shrink-preventive", "Call the smoke_read_big tool, then reply with exactly: OK"] });
     const smoke = parseSmokeLog(piRes.logPath);
     return { piRes, smoke };
   }

@@ -147,32 +147,34 @@ view-substitution, NOT a JSONL rewrite).
 
 ### F-shrink-preventive
 
-**Tests:** the bloat reminder fires on a tool result exceeding its resolved per-tool bloat threshold (read: 24 KB, all other tools — including bash: 16 KB global default); a turn-metric with `bloatHit:true` is recorded.
+**Tests:** the bloat reminder fires on a tool result exceeding its resolved bloat threshold (default
+`bloatThresholdBytes=8192`); a turn-metric with `bloatHit:true` is recorded.
 
-**Run (deterministic):** the deterministic path cannot trigger the bloat reminder (a local `bigResult()` call
-does not go through Pi's `tool_result` event, so Mulligan's `bloatReminderHandler` never sees it). It asserts
-only that a turn-metric exists.
+**Run (deterministic):** the orchestrator uses a 2-prompt flow. The first prompt dispatches the
+`/mulligan_smoke F-shrink-preventive` command (logs that `smoke_read_big` is registered). The second prompt
+instructs the model to **call `smoke_read_big`** — a **NON-`mulligan_*`** test tool whose result exceeds
+the threshold (~10KB > 8192 bytes). Because its name lacks the `mulligan_` prefix, `bloatReminderHandler` does
+**not** skip it — the real `tool_result` event fires the reminder, appends the `[mulligan]` annotation, and
+records the bloat hit. `turnEndMetricHandler` then persists a `mulligan:turn-metric` with `bloatHit:true` and
+`bloatHits` naming `smoke_read_big`. The asserter HARD-asserts `data.bloatHit === true` from the session JSONL.
 
 ```bash
 pi -e ./src/index.ts -e ./test/integration/smoke.ts --session-id smoke-F-shrink-preventive \
-  -p "/mulligan_smoke F-shrink-preventive" -p "Reply with exactly: OK"
+  -p "/mulligan_smoke F-shrink-preventive" -p "Call the smoke_read_big tool, then reply with exactly: OK"
 ```
 
-**Run (model-driven):** `bloatHit:true` is **not achievable via `mulligan_smoke_big`** — it is a `mulligan_*` tool, and `bloatReminderHandler` skips every tool whose name starts with `mulligan_` (src/nudges.ts GOTCHA #3, the `if (event.toolName.startsWith("mulligan_")) return;` line), so its result — however large — never fires the bloat reminder (see smoke.ts lines 14–17, 139–141, 205–211). The smoke harness registers no non-mulligan tool that can produce a >threshold result, so `bloatHit:true` is currently **unprovable in this harness**.
+**Run (model-driven):** any session where a non-`mulligan_*` tool returns >8192 bytes will fire the bloat
+reminder. The deterministic flow above is already model-driven (the second prompt calls `smoke_read_big`),
+so it is both the deterministic and model-driven path. Note that `mulligan_smoke_big` remains skipped by
+`bloatReminderHandler` (it starts with `mulligan_`) but is retained as the shrink-target canary for F-shrink-persist.
 
-A genuine `bloatHit:true` proof requires a **non-`mulligan_*`** model tool call whose result exceeds its resolved per-tool threshold, e.g. a `read` of a file larger than 20 KB or a `bash` command outputting more than 32 KB:
-```bash
-# Run against a checkout that contains a >20 KB file (e.g. a generated log), NOT the stock smoke harness:
-pi -e ./src/index.ts -e ./test/integration/smoke.ts \
-  -p "Read the file big.log with the read tool and summarize it."
-```
-Such a real `tool_result` event appends the `[mulligan]` bloat reminder to the result and records `bloatHit:true` in the turn-metric.
+**Expect in log (deterministic):** `tool.smoke_big` logged (confirms the command ran).
 
-**Expect in log (deterministic):** `tool.smoke_big` logged.
+**Expect in JSONL:** `mulligan:turn-metric` (custom) with `data.bloatHit === true` and `data.bloatHits`
+including `{ toolName: "smoke_read_big" }`.
 
-**Expect in JSONL:** `mulligan:turn-metric` (custom) exists.
-
-**Pass (deterministic):** turn-metric exists; §2.3 invariants hold. *(bloatHit:true is unprovable in the smoke harness — see the model-driven note above; not asserted here.)*
+**Pass (deterministic):** `bloatHit:true` HARD-asserted from the turn-metric; turn-metric exists;
+§2.3 invariants hold.
 
 ---
 

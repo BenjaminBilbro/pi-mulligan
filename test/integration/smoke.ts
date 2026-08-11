@@ -46,6 +46,7 @@ const SMOKE_LOG = process.env.MULLIGAN_SMOKE_LOG ?? "/tmp/mulligan-smoke.log";
 const MSG_CANARY = "MULLIGAN-SMOKE-MSG-CANARY"; // injected at session_start; target of last_turn rewind
 const RESULT_CANARY = "MULLIGAN-SMOKE-RESULT-CANARY"; // in mulligan_smoke_big; target of shrink
 const SHRUNK_MARKER = "MULLIGAN-SMOKE-SHRUNK"; // the shrink replacement string
+const BLOAT_CANARY = "MULLIGAN-SMOKE-BLOAT-CANARY"; // canary for smoke_read_big (non-mulligan tool — bloatReminderHandler does NOT skip it)
 
 // SEED canaries for the deterministic HIDING assertions (P1.M3.T2.S1). The session-start MSG_CANARY precedes the first
 // user message, so a last_turn rewind (which hides content AFTER the last user message) can NEVER hide it. Instead, a
@@ -200,16 +201,13 @@ async function driveScenario(pi: ExtensionAPI, ctx: ExtensionCommandContext, sce
       }
       case "F-shrink-preventive": {
         // The bloat reminder fires on the tool_result EVENT when a NON-mulligan_* result exceeds its resolved
-        // threshold (global bloatThresholdBytes=16384; per-tool read 24576, bash = global 16384). mulligan_smoke_big is
-        // a mulligan_* tool → bloatReminderHandler SKIPS it (src/nudges.ts GOTCHA #3) → it can NEVER fire here,
-        // regardless of canary size. The deterministic path also CANNOT trigger this: calling bigResult()
-        // locally is a plain function call — it does NOT go through Pi's tool_result event.
-        // So the deterministic assertion is: a turn-metric entry EXISTS (the turn_end handler ran). A real
-        // bloatHit:true proof would require a NON-mulligan_* tool whose result exceeds its resolved threshold
-        // (read >24576, bash/other >16384) — model-driven; see scenarios.md.
+        // threshold (global bloatThresholdBytes=8192). smoke_read_big (registered below) is a NON-mulligan_*
+        // tool whose result exceeds the threshold → bloatReminderHandler WILL fire on it when the model calls it.
+        // The orchestrator drives a second prompt that makes the model call smoke_read_big, producing a real
+        // tool_result event → bloatReminderHandler records the bloat hit → turnEndMetricHandler persists
+        // bloatHit:true in the turn-metric. The assertion in run-smoke.mjs HARD-checks this from the session JSONL.
         try {
-          const big = bigResult();
-          smokeLog("tool.smoke_big", "info", { len: big.length, note: "bloatHit needs model tool call; see scenarios.md" });
+          smokeLog("tool.smoke_big", "info", { note: "smoke_read_big registered; orchestrator prompt drives the model call to real tool_result to bloatHit:true" });
         } catch (e) {
           smokeLog("tool.smoke_big", "fail", { error: String(e) });
         }
@@ -438,6 +436,22 @@ export default function (pi: ExtensionAPI): void {
     parameters: Type.Object({}),
     async execute() {
       const big = bigResult();
+      return { content: [{ type: "text" as const, text: big }], details: { len: big.length } };
+    },
+  });
+
+  // (4b) registerTool smoke_read_big — a NON-mulligan_* tool whose result exceeds the resolved bloat threshold
+  //      (config.ts default bloatThresholdBytes=8192). Because its name does NOT start with mulligan_,
+  //      bloatReminderHandler does NOT skip it — a real tool_result event fires the reminder + records the
+  //      bloat hit. The orchestrator's second prompt makes the model call this tool (the only path to a real
+  //      tool_result event — see scenarios.md). This closes BUG-007: bloatHit:true is now HARD-asserted.
+  pi.registerTool({
+    name: "smoke_read_big",
+    label: "Smoke Read Big",
+    description: "SMOKE TEST TOOL. Returns a large result (>8KB) to exercise the bloat reminder. Call when asked.",
+    parameters: Type.Object({}),
+    async execute() {
+      const big = BLOAT_CANARY + " " + "x".repeat(10000);
       return { content: [{ type: "text" as const, text: big }], details: { len: big.length } };
     },
   });

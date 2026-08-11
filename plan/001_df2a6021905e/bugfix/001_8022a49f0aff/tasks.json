@@ -263,14 +263,14 @@
               "id": "P1.M4.T1",
               "type": "Task",
               "title": "Deterministic bloatHit proof (F-shrink-preventive)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "bloatReminderHandler skips every tool whose name starts with mulligan_ (src/nudges.ts line 190), so the existing mulligan_smoke_big can NEVER fire the reminder. Register a NON-mulligan_* test tool whose result exceeds the resolved per-tool bloat threshold, drive a tool_result through it, and assert bloatHit:true in the turn-metric. Independent of M1/M2 (purely a harness/tool-registration gap).",
               "subtasks": [
                 {
                   "id": "P1.M4.T1.S1",
                   "type": "Subtask",
                   "title": "Register a non-mulligan big-result test tool + bloatHit assertion",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (smoke.ts + nudges.ts:190 + scenarios.md F-shrink-preventive) bloatReminderHandler does `if (tn.startsWith(\"mulligan_\")) return;` — so mulligan_smoke_big is always skipped. A genuine bloatHit:true needs a NON-mulligan_* tool whose result exceeds its resolved threshold. Defaults (config.ts): global nudges.bloatThresholdBytes=8192. (smoke.ts notes per-tool read=24576 / bash=16384 but those are NOT in v1 DEFAULT_CONFIG — verify against config.ts; if absent, the single global 8192 threshold applies to all non-mulligan tools.) The smoke harness drives scenarios via /mulligan_smoke + a second -p prompt.\n2. INPUT: smoke.ts factory (registers tools + the /mulligan_smoke command); run-smoke.mjs (orchestrator + assertions).\n3. LOGIC: In smoke.ts register a new tool (name WITHOUT the mulligan_ prefix, e.g. \"smoke_read_big\") that returns a result > the global bloatThresholdBytes (pad to e.g. 10KB). Add an F-shrink-preventive recipe in driveScenario that triggers this tool's result through a real tool_result event (via a model prompt or by invoking the tool through pi so the tool_result handler fires), then assert on the observing context.fire / turn-metric that bloatHit:true was recorded. Coordinate with run-smoke.mjs to convert the logged bloatHit into a HARD assertion (not SOFT). Keep mulligan_smoke_big for the shrink-target canary (unchanged).\n4. OUTPUT: F-shrink-preventive now has a deterministic bloatHit:true proof. Update scenarios.md F-shrink-preventive note from \"unprovable in this harness\" to the new deterministic path (DOCS: Mode A — scenarios.md is the doc this subtask touches).",
