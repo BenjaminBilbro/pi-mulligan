@@ -111,13 +111,13 @@ describe("index.ts extension wiring", () => {
   });
 
   it("should pass-through context when enabled=false", async () => {
-    const { setConfig } = await import("../src/config.js");
-    setConfig({ enabled: false });
-
     const mod = await import("../src/index.js");
     const factory = mod.default;
     const { pi, handlers, sessionManager } = createMockPi();
     factory(pi);
+
+    const { setConfig } = await import("../src/config.js");
+    setConfig({ enabled: false });
 
     const contextHandler = handlers.get("context")!;
     const ctx = createMockCtx(sessionManager);

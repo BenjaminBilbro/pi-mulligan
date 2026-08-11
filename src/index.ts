@@ -6,6 +6,7 @@
  * (no async, no try/catch, no forbidden-API calls per D8/C2).
  *
  * Wiring order (spec/11-build-order.md §2 Step 9):
+ *   0. setConfig(loadMulliganSettings({}))        — load global config from disk (best-effort, never breaks load)
  *   1. setLogFile(getConfig().log.file)          — configure structured JSONL logger
  *   2. pi.registerTool(makeRewindTool(pi))      — mulligan_rewind
  *   3. pi.registerTool(makeShrinkTool(pi))       — mulligan_shrink
@@ -14,11 +15,12 @@
  *   6. pi.on("context", contextHandler)           — filter pipeline (heart of the extension)
  *   7. pi.on("tool_result", ...)                  — bloat reminder (Nudge A)
  *   8. pi.on("turn_end", ...)                     — turn-end metric (Nudge B Phase 1)
- *   9. pi.on("session_start", ...)                — reset per-session runtime
+ *   9. pi.on("session_start", ...)                — reset per-session runtime + re-read config
  *  10. pi.on("session_shutdown", ...)             — clear all runtimes
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { getConfig } from "./config.js";
+import { getConfig, setConfig } from "./config.js";
+import { loadMulliganSettings } from "./settingsLoader.js";
 import { setLogFile } from "./log.js";
 import { resetRuntime, clearAll } from "./runtime.js";
 import { contextHandler } from "./filter.js";
@@ -29,7 +31,10 @@ import { makeCheckpointTool } from "./tools/checkpoint.js";
 import { auditTool } from "./tools/audit.js";
 
 export default function (pi: ExtensionAPI): void {
-  // 1. Configure structured JSONL logger from zero-config defaults
+  // 0. Load global config from disk (best-effort — never break load)
+  try { setConfig(loadMulliganSettings({})); } catch { /* never break load */ }
+
+  // 1. Configure structured JSONL logger from the just-set config
   setLogFile(getConfig().log.file);
 
   // 2–5. Register the four agent-callable tools
@@ -47,9 +52,11 @@ export default function (pi: ExtensionAPI): void {
   // 8. turn-end metric (Nudge B Phase 1)
   registerTurnEndMetric(pi);
 
-  // 9. session lifecycle: reset runtime on start, clear all on shutdown
+  // 9. session lifecycle: re-read config (with cwd + trust), reset runtime, re-apply log file
   pi.on("session_start", (event, ctx) => {
+    try { setConfig(loadMulliganSettings({ cwd: ctx.cwd, isTrusted: ctx.isProjectTrusted() })); } catch { /* never break session start */ }
     resetRuntime(ctx.sessionManager.getSessionId());
+    setLogFile(getConfig().log.file);
   });
   pi.on("session_shutdown", () => {
     clearAll();

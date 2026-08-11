@@ -56,7 +56,7 @@
                   "id": "P1.M1.T2.S1",
                   "type": "Subtask",
                   "title": "Wire factory + session_start handler to call setConfig",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"
