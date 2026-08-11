@@ -648,6 +648,21 @@ describe("type-level assertions (compile-time)", () => {
     expectTypeOf(leaveNote).returns.toEqualTypeOf<void>();
   });
 
+  it("RewindMarker.hideEntryIds is string[] | undefined", () => {
+    expectTypeOf<RewindMarker['hideEntryIds']>().toEqualTypeOf<string[] | undefined>();
+  });
+
+  it("RewindMarkerInput auto-gains hideEntryIds via Omit", () => {
+    const _riPinned: RewindMarkerInput = {
+      granularity: "last_tool_call_group",
+      options: { to_previous_prompt: false },
+      note: { what_happened: "x", avoid: "y", true_current_state: "z", next: "n" },
+      ledger: { readFiles: [], modifiedFiles: [], bashSideEffects: [] },
+      hideEntryIds: ['e1', 'e2'],
+    };
+    expect(_riPinned.hideEntryIds).toEqual(['e1', 'e2']);
+  });
+
   it("Input types are Omit of wrapper-stamped fields", () => {
     // RewindMarkerInput omits schema, v, kind, id, seq, ts
     const _ri: RewindMarkerInput = {

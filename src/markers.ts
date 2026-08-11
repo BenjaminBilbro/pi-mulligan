@@ -66,6 +66,13 @@ export interface RewindMarker extends MulliganEnvelope {
   excludeToolCallId?: string;
   /** Checkpoint name when granularity is "checkpoint" (spec/06 §6). */
   checkpoint?: string;
+  /**
+   * Optional pinned target — the SessionEntry ids this rewind resolved to hide at
+   * creation time. Populated by the capture step (tools/rewind.ts), consumed by
+   * filterPipeline resolution. Absent → live resolution (backward compat).
+   * Marker DATA, not config.
+   */
+  hideEntryIds?: string[];
   seq: number;
   note: NoteInput;
   ledger: FileLedger;

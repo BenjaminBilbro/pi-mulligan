@@ -1,0 +1,137 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M2.T1.S1_1786440858705_pre-execution_0db10ea4",
+      "taskId": "P1.M2.T1.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T1_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T09:34:18.705Z"
+      },
+      "createdAt": "2026-08-11T09:34:18.705Z"
+    },
+    {
+      "id": "P1.M2.T1.S1_1786440903621_coder-response_fcf45c19",
+      "taskId": "P1.M2.T1.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T1_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All correct:\n- Line 644: Updated doc-comment (no longer claims field is absent)\n- Line 659: New field in the interface\n- Line 756: filterPipeline comment LEFT unchanged (accurate until S4)\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T09:35:03.621Z"
+      },
+      "createdAt": "2026-08-11T09:35:03.621Z"
+    },
+    {
+      "id": "P1.M2.T1.S1_1786440908614_validation-gate-4_64295883",
+      "taskId": "P1.M2.T1.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T1_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All correct:\n- Line 644: Updated doc-comment (no longer claims field is absent)\n- Line 659: New field in the interface\n- Line 756: filterPipeline comment LEFT unchanged (accurate until S4)\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 1ms\n ✓ test/notes.test.ts  (71 tests) 9ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/transforms.test.ts  (118 tests) 17ms\n ✓ test/pipeline.test.ts  (35 tests) 23ms\n ✓ test/ledger.test.ts  (39 tests) 10ms\n ✓ test/runtime.test.ts  (17 tests) 11ms\n ✓ test/config.test.ts  (24 tests) 13ms\n ✓ test/nudges.test.ts  (26 tests) 9ms\n ✓ test/drift_nudge.test.ts  (9 tests) 8ms\n ✓ test/settingsLoader.test.ts  (17 tests) 16ms\n ✓ test/turn_metric.test.ts  (17 tests) 16ms\n ✓ test/markers.test.ts  (44 tests) 21ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/tokens.test.ts  (51 tests) 33ms\n ✓ test/log.test.ts  (15 tests) 33ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 8ms\n ✓ test/tools/shrink.test.ts  (23 tests) 12ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/edge-cases.test.ts  (35 tests) 24ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 792ms\n ✓ test/tools/audit.test.ts  (40 tests) 23ms\n ✓ test/index.test.ts  (6 tests) 1017ms\n\n Test Files  22 passed | 1 skipped (23)\n      Tests  657 passed | 2 skipped (659)\n   Start at  05:35:06\n   Duration  1.60s (transform 2.67s, setup 2ms, collect 8.03s, tests 2.12s, environment 4ms, prepare 2.97s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T09:35:08.614Z"
+      },
+      "createdAt": "2026-08-11T09:35:08.614Z"
+    },
+    {
+      "id": "P1.M2.T1.S1_1786440908615_complete_f7c00983",
+      "taskId": "P1.M2.T1.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T1_S1.md",
+        "stage": "complete",
+        "coderResponse": "All correct:\n- Line 644: Updated doc-comment (no longer claims field is absent)\n- Line 659: New field in the interface\n- Line 756: filterPipeline comment LEFT unchanged (accurate until S4)\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T1.S1 implemented successfully. Added `hideEntryIds?: string[]` to RewindMarker (src/markers.ts) and RewindMarkerLike (src/transforms.ts), replaced the stale 'NO hideEntryIds' doc-comment clause, and added type-level + runtime test assertions in both test files. Validation: `npx tsc --noEmit` exit 0, `npx vitest run` 657 passed / 2 skipped (baseline 653 + 4 new), `git diff --name-only` shows exactly the 4 expected files (src/markers.ts, src/transforms.ts, test/markers.test.ts, test/pipeline.test.ts). No changes to src/config.ts, src/tools/rewind.ts, src/filter.ts, or the filterPipeline line-756 comment."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 1ms\n ✓ test/notes.test.ts  (71 tests) 9ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/transforms.test.ts  (118 tests) 17ms\n ✓ test/pipeline.test.ts  (35 tests) 23ms\n ✓ test/ledger.test.ts  (39 tests) 10ms\n ✓ test/runtime.test.ts  (17 tests) 11ms\n ✓ test/config.test.ts  (24 tests) 13ms\n ✓ test/nudges.test.ts  (26 tests) 9ms\n ✓ test/drift_nudge.test.ts  (9 tests) 8ms\n ✓ test/settingsLoader.test.ts  (17 tests) 16ms\n ✓ test/turn_metric.test.ts  (17 tests) 16ms\n ✓ test/markers.test.ts  (44 tests) 21ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/tokens.test.ts  (51 tests) 33ms\n ✓ test/log.test.ts  (15 tests) 33ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 8ms\n ✓ test/tools/shrink.test.ts  (23 tests) 12ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/edge-cases.test.ts  (35 tests) 24ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 792ms\n ✓ test/tools/audit.test.ts  (40 tests) 23ms\n ✓ test/index.test.ts  (6 tests) 1017ms\n\n Test Files  22 passed | 1 skipped (23)\n      Tests  657 passed | 2 skipped (659)\n   Start at  05:35:06\n   Duration  1.60s (transform 2.67s, setup 2ms, collect 8.03s, tests 2.12s, environment 4ms, prepare 2.97s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T09:35:08.615Z"
+      },
+      "createdAt": "2026-08-11T09:35:08.615Z"
+    }
+  ],
+  "lastModified": "2026-08-11T09:35:08.615Z"
+}

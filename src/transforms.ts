@@ -641,8 +641,8 @@ function stringifyContent(content: unknown): string {
 
 /**
  * RewindMarkerLike — the structural slice of a persisted RewindMarker that filterPipeline READS
- * (spec/04 §3; spec/06 §1/§12). NO `hideEntryIds` — that's a later fix task. Declared LOCALLY so transforms.ts
- * stays Pi-FREE. A real markers.ts RewindMarker assigns in with NO cast.
+ * (spec/04 §3; spec/06 §1/§12). Carries the optional pinned-target field hideEntryIds (see field doc).
+ * Declared LOCALLY so transforms.ts stays Pi-FREE. A real markers.ts RewindMarker assigns in with NO cast.
  */
 export interface RewindMarkerLike {
   seq: number;
@@ -650,6 +650,13 @@ export interface RewindMarkerLike {
   options?: { to_previous_prompt?: boolean };
   excludeToolCallId?: string;
   checkpoint?: string;
+  /**
+   * Optional pinned target — the SessionEntry ids this rewind resolved to hide at
+   * creation time. When present and non-empty, filterPipeline resolves the removal
+   * set from these ids (stable) instead of the live granularity resolver.
+   * Absent on legacy/unpinned markers → live resolution (backward compat).
+   */
+  hideEntryIds?: string[];
 }
 
 /**

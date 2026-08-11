@@ -432,6 +432,22 @@ describe("filterPipeline — spec/10 §1.9 composition", () => {
     expectTypeOf(filterPipeline([], undefined, undefined)).toEqualTypeOf<MessageLike[]>();
     expectTypeOf(protectedOk([], [], undefined)).toEqualTypeOf<boolean>();
   });
+
+  it("RewindMarkerLike.hideEntryIds type is string[] | undefined", () => {
+    expectTypeOf<RewindMarkerLike>().toHaveProperty("hideEntryIds").toEqualTypeOf<string[] | undefined>();
+  });
+
+  it("hideEntryIds is carried but not consumed (S1 behavioral no-op)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c"), asstText("after")];
+    const branchEntries: BranchEntry[] = [];
+    // Marker WITH the pinned field
+    const rwPinned = mkRewind(1, 'last_tool_call_group', { hideEntryIds: ['e1', 'e2'], excludeToolCallId: 'c' });
+    // Marker WITHOUT the pinned field
+    const rwPlain = mkRewind(1, 'last_tool_call_group', { excludeToolCallId: 'c' });
+    const outPinned = filterPipeline(msgs, { rewinds: [rwPinned], shrinks: [] }, cfg, branchEntries);
+    const outPlain = filterPipeline(msgs, { rewinds: [rwPlain], shrinks: [] }, cfg, branchEntries);
+    expect(outPinned).toEqual(outPlain);
+  });
 });
 
 // ── filterPipeline property/invariant tests (spec/10 §3) ──────────────────────────────────────────
