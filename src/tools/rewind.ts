@@ -298,7 +298,7 @@ function resolvePreview(
   ctx: ExtensionContext,
   params: RewindArgs,
   toolCallId: string,
-): { ledger: FileLedger; k: number; hideEntryIds: string[] } {
+): { ledger: FileLedger; k: number; hideEntryIds: string[]; remove: number[]; messages: MessageLike[] } {
   const branchRaw = ctx.sessionManager.getBranch();
   const branchRootToLeaf: BranchEntry[] = Array.isArray(branchRaw) ? branchRaw.slice().reverse() as BranchEntry[] : [];
   const messages: MessageLike[] = [];
@@ -326,7 +326,7 @@ function resolvePreview(
   const hideEntryIds = remove
     .map((i) => indexToEntryId[i])
     .filter((id): id is string => typeof id === "string" && id.length > 0);
-  return { ledger, k: remove.length, hideEntryIds };
+  return { ledger, k: remove.length, hideEntryIds, remove, messages };
 }
 
 // ── execute (spec/05 §1 behavior; shared tool convention = never throws — E13) ─────
@@ -392,13 +392,17 @@ async function rewindExecute(
     let ledger: FileLedger;
     let k: number;
     let hideEntryIds: string[];
+    let remove: number[];
+    let messages: MessageLike[];
     try {
-      ({ ledger, k, hideEntryIds } = resolvePreview(ctx, params, toolCallId));
+      ({ ledger, k, hideEntryIds, remove, messages } = resolvePreview(ctx, params, toolCallId));
     } catch {
       // Snapshot/resolution failure → best-effort: empty ledger + K=0 + STILL proceed (E13/E8).
       ledger = emptyLedger();
       k = 0;
       hideEntryIds = [];
+      remove = [];
+      messages = [];
     }
 
     // (5b) protected-refusal check — spec/08 E3 ("the tool refuses before persisting") + spec/10 §2.1 F-protected
@@ -412,6 +416,28 @@ async function rewindExecute(
         "would cross a protected message (to_previous_prompt would rewind across the first/only user message — the original task)",
         "last_turn",
       );
+    }
+
+    // (5c) checkpoint latest:user guard — BUG-003 tool layer (spec/06 §8 defense-in-depth).
+    //      Refuse BEFORE persisting (marker/note) when a checkpoint rewind's resolved removal set
+    //      would hide the LAST user message (the current ask). Scoped to checkpoint ONLY:
+    //      last_turn default is construction-safe (resolveLastTurn keeps iLastUser),
+    //      last_turn nuclear is step-5b, last_tool_call_group removes only a toolGroup.
+    //      Config-gated on config.rewind.protectedRoles including "latest:user" (default).
+    //      On resolvePreview catch (snapshot failure): remove=[] → iLatestUser=-1 → guard no-ops;
+    //      the filter's protectedOk (S1) is the authoritative backstop.
+    if (granularity === "checkpoint" && config.rewind.protectedRoles.includes("latest:user")) {
+      let iLatestUser = -1;
+      for (let i = 0; i < messages.length; i++) {
+        const m = messages[i];
+        if (m && typeof m === "object" && (m as MessageLike).role === "user") iLatestUser = i;
+      }
+      if (iLatestUser !== -1 && remove.includes(iLatestUser)) {
+        return refusal(
+          "would cross a protected message (checkpoint rewind would remove the latest user message — the current ask)",
+          "checkpoint",
+        );
+      }
     }
 
     // (6) render note (step 6 — note already validated by step 2; renderNote does NOT re-validate).

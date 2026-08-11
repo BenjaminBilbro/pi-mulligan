@@ -703,3 +703,79 @@ describe("mulligan_rewind — hideEntryIds capture (BUG-002 pin; P1.M2.T1.S3)", 
     expect(appended).toHaveLength(1);
   });
 });
+
+// ── checkpoint latest:user protected guard (BUG-003 tool layer; spec/06 §8) ──────────
+
+describe("mulligan_rewind — checkpoint latest:user protected guard (BUG-003 tool layer; spec/06 §8)", () => {
+  it("BUG-003 repro: checkpoint targetId precedes a LATER user message → refused; no marker, no note", async () => {
+    const { appended, sent, pi } = makePi();
+    // branch is LEAF→ROOT order. resolvePreview reverses to ROOT→LEAF internally.
+    // Label entry yields [] context messages (doesn't shift indices).
+    // ROOT→LEAF snapshot: u0(asst) → a1 → r1 → u1(LATEST) → [label:cp]
+    // iLatestUser = index of u1 (the last role:"user")
+    // checkpoint targetId = e-a1 → remove includes indices after a1's position, which includes u1
+    const branch = [
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
+      { type: "message", id: "e-u1", message: user("u1 LATEST ask — should be protected") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-u0", message: user("u0 original") },
+    ];
+    const { ctx } = makeCtx({
+      entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
+      labels: new Map([["e-a1", "mulligan:checkpoint:cp"]]),
+      branch,
+    });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "checkpoint", checkpoint: "cp" });
+    expect(firstText(res)).toMatch(/^Mulligan: refused — would cross a protected message/);
+    expect(firstText(res)).toContain("checkpoint rewind would remove the latest user message");
+    expect(appended).toHaveLength(0);
+    expect(sent).toHaveLength(0);
+    expect(res.details).toEqual({ granularity: "checkpoint" });
+  });
+
+  it("positive control: checkpoint that does NOT cross latest:user still succeeds (no over-refusal)", async () => {
+    const { appended, pi } = makePi();
+    // branch LEAF→ROOT. ROOT→LEAF: u0(only user) → a1 → r1 → a2 → r2 → [label:cp]
+    // iLatestUser = 0 (u0, the only user). checkpoint targetId = e-a1.
+    // resolveCheckpoint remove = indices after a1 → [3,4] (a2,r2) — does NOT include 0.
+    const branch = [
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
+      { type: "message", id: "e-r2", message: result("a2") },
+      { type: "message", id: "e-a2", message: asst("a2") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-u0", message: user("only user") },
+    ];
+    const { ctx } = makeCtx({
+      entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
+      labels: new Map([["e-a1", "mulligan:checkpoint:cp"]]),
+      branch,
+    });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "checkpoint", checkpoint: "cp" });
+    expect(firstText(res)).toMatch(/^Mulligan: rewound checkpoint/);
+    expect(appended).toHaveLength(1);
+    expect(res.details.granularity).toBe("checkpoint");
+  });
+
+  it("config-gate control: protectedRoles omits latest:user → guard does not fire → tool proceeds", async () => {
+    setConfig({ rewind: { protectedRoles: ["first:user"] } });
+    const { appended, sent, pi } = makePi();
+    // Same BUG-003 fixture: checkpoint targetId precedes a later user message
+    const branch = [
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
+      { type: "message", id: "e-u1", message: user("u1 LATEST ask") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-u0", message: user("u0 original") },
+    ];
+    const { ctx } = makeCtx({
+      entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
+      labels: new Map([["e-a1", "mulligan:checkpoint:cp"]]),
+      branch,
+    });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "checkpoint", checkpoint: "cp" });
+    expect(firstText(res)).toMatch(/^Mulligan: rewound checkpoint/);
+    expect(appended.length).toBeGreaterThanOrEqual(1);
+  });
+});

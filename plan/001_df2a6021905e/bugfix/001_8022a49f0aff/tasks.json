@@ -84,7 +84,7 @@
           "id": "P1.M2",
           "type": "Milestone",
           "title": "Filter targeting & protection correctness (BUG-002 critical + BUG-003 major)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The filter's live relative targeting (spec D7) is correct for a SINGLE rewind but breaks under composition: a second last_tool_call_group rewind re-targets the first (BUG-002 — originally-hidden content reappears, violating success criterion #4), and the latest:user protected role is never enforced for checkpoint rewinds (BUG-003 — a checkpoint rewind can delete the current ask). Fixes: pin each rewind's resolved target onto the marker at creation time and have the filter resolve against the pin; add the latest:user branch to protectedOk and a checkpoint pre-persist guard in the rewind tool.",
           "tasks": [
             {
@@ -157,7 +157,7 @@
               "id": "P1.M2.T2",
               "type": "Task",
               "title": "Enforce latest:user protection (BUG-003)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "protectedOk only enforces first:user; the latest:user selector is read from config but never acted on. For checkpoint granularity, resolveCheckpoint removes everything after the checkpoint target — which can include a user message that arrived after the checkpoint, crossing the latest:user boundary. Fix both layers (spec/06 §8 defense-in-depth): add the latest:user branch to protectedOk (filter), and extend the rewind tool's pre-persist guard to refuse a checkpoint rewind that would cross the latest user message.",
               "subtasks": [
                 {
@@ -174,7 +174,7 @@
                   "id": "P1.M2.T2.S2",
                   "type": "Subtask",
                   "title": "rewind tool — checkpoint pre-persist guard refusing latest:user crossing + tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S1"
