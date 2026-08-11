@@ -11,7 +11,7 @@
           "id": "P1.M1",
           "type": "Milestone",
           "title": "Major rewind-protection correctness (BUG-001, BUG-002)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The two MAJOR bugs share one correctness surface: protectedOk() + filterPipeline's `if (!protectedOk(...))` block + rewind.ts step 5b. BUG-001 makes to_previous_prompt:true (2+ users) actually hide the latest user. BUG-002 makes a checkpoint crossing the latest user refuse cleanly (tool) and no-op (filter) instead of partially applying. Sequenced BUG-001-first (changes the protectedOk signature that BUG-002's tool-side guard then reuses). The end state is honest bookkeeping: the tool's reported K always equals the filter's actual hidden count for EVERY granularity.",
           "tasks": [
             {
@@ -49,7 +49,7 @@
               "id": "P1.M1.T2",
               "type": "Task",
               "title": "BUG-002 — checkpoint crossing the latest user must refuse (tool) / no-op (filter), not partially apply (trim)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "filterPipeline has a checkpoint-specific branch that TRIMS the removal set (remove.filter(r => r < iLatestUser)) when protectedOk fails, producing a non-contiguous view and a tool/filter K mismatch. Fix BOTH sides: (filter) remove the trim branch so a checkpoint crossing the latest user no-ops like every other granularity; (tool) add a pre-persist honest-K guard so resolvePreview's reported K always equals what the filter will actually hide — refuse before persisting when a checkpoint removal crosses the latest user. Depends on P1.M1.T1.S1 (the protectedOk signature it reuses).",
               "subtasks": [
                 {
@@ -68,7 +68,7 @@
                   "id": "P1.M1.T2.S2",
                   "type": "Subtask",
                   "title": "rewind.ts: pre-persist honest-K guard — refuse when a checkpoint removal crosses the latest user",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1",
