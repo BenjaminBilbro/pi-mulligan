@@ -300,7 +300,9 @@ function resolvePreview(
   toolCallId: string,
 ): { ledger: FileLedger; k: number; hideEntryIds: string[]; remove: number[]; messages: MessageLike[] } {
   const branchRaw = ctx.sessionManager.getBranch();
-  const branchRootToLeaf: BranchEntry[] = Array.isArray(branchRaw) ? branchRaw.slice().reverse() as BranchEntry[] : [];
+  // getBranch() returns ROOT→LEAF (it walks leaf→root via parentId, then reverses). We need ROOT→LEAF
+  // to align with messages (Pi's context event fires with messages in ROOT→LEAF chronological order).
+  const branchRootToLeaf: BranchEntry[] = Array.isArray(branchRaw) ? branchRaw.slice() as BranchEntry[] : [];
   const messages: MessageLike[] = [];
   const indexToEntryId: string[] = [];
   for (const e of branchRootToLeaf) {
@@ -416,28 +418,6 @@ async function rewindExecute(
         "would cross a protected message (to_previous_prompt would rewind across the first/only user message — the original task)",
         "last_turn",
       );
-    }
-
-    // (5c) checkpoint latest:user guard — BUG-003 tool layer (spec/06 §8 defense-in-depth).
-    //      Refuse BEFORE persisting (marker/note) when a checkpoint rewind's resolved removal set
-    //      would hide the LAST user message (the current ask). Scoped to checkpoint ONLY:
-    //      last_turn default is construction-safe (resolveLastTurn keeps iLastUser),
-    //      last_turn nuclear is step-5b, last_tool_call_group removes only a toolGroup.
-    //      Config-gated on config.rewind.protectedRoles including "latest:user" (default).
-    //      On resolvePreview catch (snapshot failure): remove=[] → iLatestUser=-1 → guard no-ops;
-    //      the filter's protectedOk (S1) is the authoritative backstop.
-    if (granularity === "checkpoint" && config.rewind.protectedRoles.includes("latest:user")) {
-      let iLatestUser = -1;
-      for (let i = 0; i < messages.length; i++) {
-        const m = messages[i];
-        if (m && typeof m === "object" && (m as MessageLike).role === "user") iLatestUser = i;
-      }
-      if (iLatestUser !== -1 && remove.includes(iLatestUser)) {
-        return refusal(
-          "would cross a protected message (checkpoint rewind would remove the latest user message — the current ask)",
-          "checkpoint",
-        );
-      }
     }
 
     // (6) render note (step 6 — note already validated by step 2; renderNote does NOT re-validate).

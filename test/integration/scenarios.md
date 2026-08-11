@@ -255,6 +255,12 @@ pi -e ./src/index.ts -e ./test/integration/smoke.ts --session-id smoke-F-maxdept
 
 ### F-retrycap
 
+> ⚠️ **OUT OF SCOPE (v1).** v1 does not implement `rewind.maxRetriesPerPrompt` (it is NOT in `config.ts` —
+> absent from the `MulliganConfig.rewind` interface, `DEFAULT_CONFIG`, and `validateConfig`; it is not a v1
+> feature). This scenario is documented for future versions and is **not run by `npm run smoke`** (the
+> `SCENARIOS` array in `run-smoke.mjs` excludes it). The design rationale below is preserved for when the
+> knob ships.
+
 **Tests:** the per-prompt retry budget (E22 a–d). With `rewind.maxRetriesPerPrompt:2`, repeated `last_turn`
 rewinds that re-land at the SAME prompt are refused at the 3rd attempt with the "per-prompt retry budget"
 message; a fresh user prompt restores the budget.
@@ -276,6 +282,12 @@ budget; `mulligan_shrink`/`mulligan_audit` remain callable throughout. §2.3 inv
 ---
 
 ### F-abortfraction
+
+> ⚠️ **OUT OF SCOPE (v1).** v1 does not implement `rewind.abortContextFraction` (it is NOT in `config.ts` —
+> absent from the `MulliganConfig.rewind` interface, `DEFAULT_CONFIG`, and `validateConfig`; it is not a v1
+> feature). This scenario is documented for future versions and is **not run by `npm run smoke`** (the
+> `SCENARIOS` array in `run-smoke.mjs` excludes it). The design rationale below is preserved for when the
+> knob ships.
 
 **Tests:** the context-fraction stop (E22 e). When the filtered context is ≥ `rewind.abortContextFraction`
 of the window, a rewind is refused with the "context is at …% of the window" message even though the retry

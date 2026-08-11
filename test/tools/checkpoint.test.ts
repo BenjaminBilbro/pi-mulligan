@@ -83,6 +83,9 @@ function makeCtx(opts: {
     getLeafId() {
       return leafId;
     },
+    getBranch() {
+      return [{ type: "message", id: leafId ?? "leaf-1", parentId: null }];
+    },
     getLabel(id: string) {
       return labelMap.get(id) ?? null;
     },

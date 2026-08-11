@@ -890,7 +890,24 @@ export function filterPipeline(
       remove = [];
     }
 
-    if (!protectedOk(m, remove, config)) continue;
+    if (!protectedOk(m, remove, config)) {
+      // For checkpoint granularity, trim the removal set to exclude the latest user message
+      // (and everything after it) instead of skipping the entire rewind. A checkpoint rewind
+      // should hide content between the checkpoint target and the latest user, but keep the
+      // latest user (it's the current ask). For other granularities, skip as before.
+      if (granularity === "checkpoint") {
+        let iLatestUser = -1;
+        for (let i = 0; i < m.length; i++) {
+          if (isRecord(m[i]) && readOwn(m[i], "role") === "user") iLatestUser = i;
+        }
+        if (iLatestUser !== -1) {
+          remove = remove.filter((r) => r < iLatestUser);
+          if (remove.length === 0) continue;
+        }
+      } else {
+        continue;
+      }
+    }
     origIdxOfM = applyRewind(origIdxOfM, remove);
     m = applyRewind(m, remove);
   }

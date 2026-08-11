@@ -256,7 +256,7 @@
           "id": "P1.M4",
           "type": "Milestone",
           "title": "Integration smoke determinism (BUG-007)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The deterministic smoke suite passes 9/9 but four spec/10 §2.1 scenarios have SOFT/model-driven-only headline assertions (F-rewind-core seed-hiding, F-checkpoint K/seed-hiding, F-shrink-preventive bloatHit, F-nudge-drift hasNudge), and scenarios.md documents F-retrycap/F-abortfraction which reference unimplemented config knobs. This milestone adds deterministic coverage now achievable thanks to M1 (real config reading) and M2 (pinned targets), and marks the out-of-scope scenarios. MUST run after M1 and M2 land.",
           "tasks": [
             {
@@ -303,14 +303,14 @@
               "id": "P1.M4.T3",
               "type": "Task",
               "title": "Hard seed-hiding assertions + mark out-of-scope scenarios",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Now that M2 pins rewind targets, the F-rewind-core and F-checkpoint seed-hiding assertions (currently logged pass/fail but NOT gating) become deterministic — convert them to HARD run-smoke.mjs assertions. Also mark F-retrycap and F-abortfraction OUT-OF-SCOPE in scenarios.md: they reference config knobs (rewind.maxRetriesPerPrompt, rewind.abortContextFraction) that v1 config.ts does not implement.",
               "subtasks": [
                 {
                   "id": "P1.M4.T3.S1",
                   "type": "Subtask",
                   "title": "Convert F-rewind-core/F-checkpoint hiding to HARD + mark F-retrycap/F-abortfraction OOS",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S4"

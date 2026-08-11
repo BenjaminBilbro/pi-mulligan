@@ -100,6 +100,9 @@ function makeCtx(opts: {
         if (opts.throwOnGetLeafId) throw new Error("getLeafId boom");
         return leafId;
       },
+      getBranch: () => [
+        { type: "message", id: leafId ?? "leaf-1", parentId: null },
+      ],
       getEntries: () => entries,
       getLabel: (_id: string) => undefined,
     },
@@ -538,7 +541,7 @@ describe("leaveNote channel = custom_message (not custom)", () => {
 });
 
 describe("setCheckpoint", () => {
-  it("calls setLabel with (leafId, 'mulligan:checkpoint:<name>') and returns leafId", () => {
+  it("calls setLabel with (targetId, 'mulligan:checkpoint:<name>') and returns targetId", () => {
     const { pi, labels } = makePi();
     const { ctx } = makeCtx({ leafId: "leaf-99" });
 

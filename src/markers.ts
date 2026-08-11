@@ -336,8 +336,24 @@ export function setCheckpoint(
       });
       return null;
     }
-    pi.setLabel(leafId, "mulligan:checkpoint:" + name);
-    return leafId;
+    // Label the LAST CONTEXT-PRODUCING entry on the branch (message, custom_message,
+    // branch_summary, compaction) — not necessarily the leaf itself (which may be a
+    // non-context-producing entry like a turn-metric or label). resolveCheckpoint maps
+    // the targetId to a message index via mapEntryIdsToMessageIndices, which only
+    // walks context-producing entries; a non-context-producing targetId resolves to
+    // nothing → K=0 → empty rewind.
+    const branch = ctx.sessionManager.getBranch(); // ROOT→LEAF
+    let targetId = leafId;
+    for (let i = branch.length - 1; i >= 0; i--) {
+      const e = branch[i];
+      const type = e && typeof e === "object" ? (e as unknown as Record<string, unknown>).type : undefined;
+      if (type === "message" || type === "custom_message" || type === "branch_summary" || type === "compaction") {
+        targetId = (e as unknown as Record<string, unknown>).id as string;
+        break;
+      }
+    }
+    pi.setLabel(targetId, "mulligan:checkpoint:" + name);
+    return targetId;
   } catch (e) {
     logError("markers.checkpoint", sessionId, {
       error: e instanceof Error ? e.message : String(e),

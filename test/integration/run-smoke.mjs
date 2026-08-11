@@ -239,15 +239,14 @@ function assertRewindCore({ smoke, piRes }) {
   assert(results, "context.fire observed", !!cf, cf ? "" : "no context.fire");
   assert(results, "context.fire hasRewindMarker:true", cf?.hasRewindMarker === true, String(cf?.hasRewindMarker));
   assert(results, "context.fire notePresent:true", cf?.notePresent === true, String(cf?.notePresent));
-  // NEW: the seed reply hiding check — SOFT because live last_turn resolution at filter time targets the
-  // current last user message (which has moved since rewind time). The oracle's hideEntryIds pinning
-  // (later task) makes this deterministic. Without it, the seed may not be hidden.
+  // Signal 2 of the two-signal guard: the hideEntryIds M2 pin (P1.M2.T1.S4; src/transforms.ts filterPipeline ~L860-880)
+  // makes the seed reply stably hidden on the observing inference — status=pass is deterministic.
+  // Signal 1 (K>=1 above) proves the seed existed+was pinned at rewind time; this proves it is ABSENT post-filter.
+  // Fail = LEAKED BACK (BUG-001/002/003 regression — hideEntryIds pin or origIdxOfM translation broken).
   const hidingLines = smoke.lines.filter((l) => l.test === "F-rewind-core.hiding");
   const lastHiding = hidingLines[hidingLines.length - 1];
   const hidingPass = lastHiding && lastHiding.status === "pass";
-  if (!hidingPass) {
-    console.log(`  ⚠ SOFT: seed hiding not verified (hideEntryIds not yet implemented — live last_turn resolution moved the target)`);
-  }
+  assert(results, "F-rewind-core.hiding: seed reply HIDDEN on observing inference (status=pass; two-signal guard w/ K>=1)", hidingPass === true, lastHiding ? JSON.stringify(lastHiding.detail).slice(0, 120) : "no F-rewind-core.hiding line emitted");
   // JSONL: mulligan:rewind (custom) + mulligan:note (custom_message)
   if (entries.length > 0) {
     assert(results, "JSONL has mulligan:rewind (custom)", countCustom(entries, "mulligan:rewind", "rewind") >= 1, "");
@@ -256,7 +255,7 @@ function assertRewindCore({ smoke, piRes }) {
   } else {
     console.log(`  ⚠ JSONL unavailable (model may have timed out) — smoke-log assertions are primary`);
   }
-  return { results, entries, soft: "seed hiding requires hideEntryIds pinning (later task); live last_turn resolution at filter time targets the current last user message, not the rewind-time one — see scenarios.md" };
+  return { results, entries };
 }
 
 function assertShrinkPersist({ smoke, piRes }) {
@@ -395,28 +394,26 @@ function assertCheckpoint({ smoke, piRes }) {
   // checkpoint rewind RAN. K>0 at rewind-time proves the checkpoint pinned content. The filter's live
   // resolution may differ (hideEntryIds not yet implemented), so we check the rewind-time K text only.
   assert(results, "checkpoint rewind ran", rwLines.length >= 1, "");
-  const rwK0 = rwLine && /0 messages will be hidden/i.test(rwText);
-  if (rwK0) {
-    console.log(`  ⚠ SOFT: checkpoint rewind K=0 at filter time (hideEntryIds not yet implemented — live resolution may differ from rewind-time preview)`);
-  } else {
-    assert(results, "checkpoint rewind K>0 (rewind-time preview)", rwLine && !/refused/i.test(rwText), rwText.slice(0, 80));
-  }
-  // The post-checkpoint seed hiding + anchor assertion — SOFT because live resolution at filter time may
-  // differ from rewind-time resolution (hideEntryIds not yet implemented).
+  // Signal 1 of the two-signal guard: the hideEntryIds M2 pin captures the post-checkpoint seed at rewind-creation,
+  // so K>0 is deterministic (the seed reply committed before the command is pinned -> hidden on observing fire).
+  assert(results, "checkpoint rewind K>0 (rewind-time preview — seed pinned; signal 1 of two-signal guard)", rwLine && !/0 messages will be hidden/i.test(rwText) && !/refused/i.test(rwText), rwText.slice(0, 80));
+  // Signal 2 of the two-signal guard: SEED_HIDDEN hidden + SEED_ANCHOR survives on the observing inference.
+  // Deterministic via the hideEntryIds pin (P1.M2.T1.S4) — stable target that does not move with later -p prompts.
+  // Fail = LEAKED BACK (BUG-001/002/003 regression — hideEntryIds pin or origIdxOfM translation broken).
   const hidingLines = smoke.lines.filter((l) => l.test === "F-checkpoint.hiding");
   const lastHiding = hidingLines[hidingLines.length - 1];
   const hidingPass = lastHiding && lastHiding.status === "pass";
-  if (!hidingPass) {
-    console.log(`  ⚠ SOFT: checkpoint seed hiding not verified (hideEntryIds not yet implemented — live resolution differs)`);
-  }
+  assert(results, "F-checkpoint.hiding: post-checkpoint seed hidden + anchor survives (status=pass; two-signal guard w/ K>0)", hidingPass === true, lastHiding ? JSON.stringify(lastHiding.detail).slice(0, 120) : "no F-checkpoint.hiding line emitted");
   if (entries.length > 0) {
     assert(results, "JSONL has label mulligan:checkpoint:alpha", countLabel(entries, "mulligan:checkpoint:alpha") >= 1, "");
     assert(results, "JSONL has mulligan:rewind (custom)", countCustom(entries, "mulligan:rewind", "rewind") >= 1, "");
-    // REGRESSION (validation issue #1b/#5): the checkpoint 'alpha' should be CONSUMED by the rewind.
-    // SOFT when hideEntryIds is not yet implemented — the filter may not have actually hidden content.
+    // Checkpoint auto-expiry: the checkpoint label should be CONSUMED (cleared) after the rewind.
+    // KEPT SOFT: auto-expiry (setLabel(id, undefined) clear) is spec'd (spec/05 §3 step 5, validation issue #1b/#5)
+    // but NOT yet implemented (no clear call anywhere in src/ — verified). Orthogonal to hideEntryIds (the M2 pin
+    // makes HIDING deterministic but does not clear labels). Making this HARD would permanently fail F-checkpoint.
     const consumed = !labelActive(entries, "mulligan:checkpoint:alpha");
     if (!consumed) {
-      console.log(`  ⚠ SOFT: checkpoint not consumed (hideEntryIds not yet implemented — live resolution may not have triggered auto-expiry)`);
+      console.log(`  ⚠ SOFT: checkpoint not consumed (auto-expiry not yet implemented — spec/05 §3 step 5; orthogonal to hideEntryIds)`);
     } else {
       assert(results, "checkpoint 'alpha' CONSUMED by rewind (auto-expiry; spec/05 §3 step 5)", true, "");
     }

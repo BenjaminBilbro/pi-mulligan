@@ -180,7 +180,8 @@ export function contextHandler(
 
     const rt = runtime(ctx.sessionManager); // get-or-create live SessionRuntime (NOT getRuntime)
     const markers = readMarkers(ctx); // fresh markers each fire (C12)
-    const branchEntries = ctx.sessionManager.getBranch().slice().reverse() as unknown as BranchEntry[];
+    // getBranch() returns ROOT→LEAF — matching Pi's context event messages (chronological).
+    const branchEntries = ctx.sessionManager.getBranch().slice() as unknown as BranchEntry[];
 
     const messages = filterPipeline(event.messages as unknown as import("./transforms.js").MessageLike[], markers, config, branchEntries);
 

@@ -517,17 +517,17 @@ describe("contextHandler", () => {
   });
 
   // (n) BRANCHENTRIES REVERSAL: checkpoint rewind resolves with reversed branch
-  it("branchEntries reversal: checkpoint rewind resolves correctly with reversed getBranch output", () => {
-    // getBranch returns LEAF→ROOT; contextHandler reverses it to ROOT→LEAF.
-    // resolveCheckpoint scans ROOT→LEAF in REVERSE (leaf→root) to find the most-recent label.
-    // After reversal: [entry-1 (root msg), entry-3 (leaf msg), cp-1 (label)]
+  it("branchEntries reversal: checkpoint rewind resolves correctly with ROOT→LEAF getBranch output", () => {
+    // getBranch() returns ROOT→LEAF. contextHandler passes it directly (no reverse needed).
+    // resolveCheckpoint scans ROOT→LEAF in REVERSE (from end = leaf-most) to find the most-recent label.
+    // Branch: [entry-1 (root user msg), entry-3 (leaf assistant), cp-1 (label, leaf-most)]
     // REVERSE scan finds cp-1 at index 2 (leaf-most label wins).
     // Walk context-producing entries: entry-1 (msgCursor 0→1, matches targetId → iTarget=0),
     // entry-3 (msgCursor 1→2). Remove indices > 0 → removes assistant. ✓
-    const branchLeafToRoot = [
+    const branchRootToLeaf = [
+      { type: "message", id: "entry-1", parentId: null },
       { type: "message", id: "entry-3", parentId: "entry-1" },
       { type: "label", id: "cp-1", parentId: "entry-1", targetId: "entry-1", label: "mulligan:checkpoint:my-cp" },
-      { type: "message", id: "entry-1", parentId: null },
       rewindEntry(1, {
         granularity: "checkpoint",
         checkpoint: "my-cp",
@@ -542,7 +542,7 @@ describe("contextHandler", () => {
           checkpoint: "my-cp",
         }),
       ],
-      branch: branchLeafToRoot, // LEAF→ROOT (Pi's getBranch return) — includes the rewind marker for readMarkers
+      branch: branchRootToLeaf, // ROOT→LEAF (Pi's getBranch return)
     });
 
     // Messages: [user (entry-1), assistant1 (entry-3)]

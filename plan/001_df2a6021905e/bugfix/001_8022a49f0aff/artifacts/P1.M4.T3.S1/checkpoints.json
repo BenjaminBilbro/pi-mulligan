@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M4.T3.S1_1786451558683_pre-execution_81c7835d",
+      "taskId": "P1.M4.T3.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T3_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T12:32:38.683Z"
+      },
+      "createdAt": "2026-08-11T12:32:38.683Z"
+    },
+    {
+      "id": "P1.M4.T3.S1_1786453328519_coder-response_e730c76f",
+      "taskId": "P1.M4.T3.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T3_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All validation gates pass:\n- **Level 1** (tsc): ✅ Zero errors\n- **Level 2** (npm test): ✅ 697 passed, 2 skipped (same as baseline)\n- **Level 3** (npm run smoke): ✅ 9/9 scenarios passed\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\\n\\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\\n\\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\\n\\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\\n\\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\\n\\n**Additional fixes required (bugs discovered during implementation):**\\n\\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\\n\\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\\n\\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\\n\\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\\n\\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\\n\\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\n\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\n\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\n\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\n\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\n\n**Additional fixes required (bugs discovered during implementation):**\n\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\n\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\n\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\n\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\n\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\n\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T13:02:08.519Z"
+      },
+      "createdAt": "2026-08-11T13:02:08.519Z"
+    },
+    {
+      "id": "P1.M4.T3.S1_1786453410503_validation-gate-4_04a4886f",
+      "taskId": "P1.M4.T3.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T3_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All validation gates pass:\n- **Level 1** (tsc): ✅ Zero errors\n- **Level 2** (npm test): ✅ 697 passed, 2 skipped (same as baseline)\n- **Level 3** (npm run smoke): ✅ 9/9 scenarios passed\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\\n\\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\\n\\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\\n\\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\\n\\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\\n\\n**Additional fixes required (bugs discovered during implementation):**\\n\\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\\n\\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\\n\\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\\n\\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\\n\\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\\n\\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\n\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\n\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\n\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\n\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\n\n**Additional fixes required (bugs discovered during implementation):**\n\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\n\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\n\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\n\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\n\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\n\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 17ms\n ✓ test/transforms.test.ts  (130 tests) 21ms\n ✓ test/config.test.ts  (24 tests) 12ms\n ✓ test/settingsLoader.test.ts  (17 tests) 13ms\n ✓ test/runtime.test.ts  (17 tests) 12ms\n ✓ test/ledger.test.ts  (39 tests) 11ms\n ✓ test/turn_metric.test.ts  (17 tests) 9ms\n ✓ test/nudges.test.ts  (26 tests) 7ms\n ✓ test/log.test.ts  (15 tests) 25ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/pipeline.test.ts  (47 tests) 44ms\n ✓ test/markers.test.ts  (44 tests) 20ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/tokens.test.ts  (51 tests) 45ms\n ✓ test/integration/load.test.ts  (1 test) 3ms\n ✓ test/tools/audit.test.ts  (45 tests) 18ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/edge-cases.test.ts  (35 tests) 38ms\n ✓ test/index.test.ts  (6 tests) 866ms\n ✓ test/tools/rewind.test.ts  (36 tests) 16ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 1081ms\n ✓ test/branch-isolation.test.ts  (4 tests) 17ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  09:02:11\n   Duration  1.80s (transform 2.36s, setup 2ms, collect 9.69s, tests 2.31s, environment 4ms, prepare 3.46s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint not consumed (auto-expiry not yet implemented — spec/05 §3 step 5; orthogonal to hideEntryIds)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T13:03:30.503Z"
+      },
+      "createdAt": "2026-08-11T13:03:30.503Z"
+    },
+    {
+      "id": "P1.M4.T3.S1_1786453410514_complete_a87d9c4d",
+      "taskId": "P1.M4.T3.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T3_S1.md",
+        "stage": "complete",
+        "coderResponse": "All validation gates pass:\n- **Level 1** (tsc): ✅ Zero errors\n- **Level 2** (npm test): ✅ 697 passed, 2 skipped (same as baseline)\n- **Level 3** (npm run smoke): ✅ 9/9 scenarios passed\n\n```json\n{\n  \"result\": \"success\",\n  \"message\": \"PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\\n\\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\\n\\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\\n\\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\\n\\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\\n\\n**Additional fixes required (bugs discovered during implementation):**\\n\\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\\n\\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\\n\\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\\n\\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\\n\\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\\n\\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "PRP P1.M4.T3.S1 implemented successfully. All 4 PRP tasks completed:\n\n**Task 1 — assertRewindCore HARD hiding:** F-rewind-core.hiding is now a HARD assert(status=pass) with two-signal guard (K>=1 signal 1 stays HARD). SOFT console.log warning removed. soft: return field removed (return is {results, entries}). Stale comment fixed.\n\n**Task 2 — assertCheckpoint HARD signals:** Signal 1 (rwK0 SOFT-conditional) replaced with single straight HARD assert (K>0 + not refused). Signal 2 (F-checkpoint.hiding) converted to HARD assert(status=pass). Both SOFT console.log warnings removed. Consumed check STAYS SOFT with fixed comment (auto-expiry not implemented; orthogonal to hideEntryIds).\n\n**Task 3 — scenarios.md F-retrycap OOS banner:** Prominent OUT-OF-SCOPE blockquote prepended naming rewind.maxRetriesPerPrompt (not in config.ts). Existing scenario text preserved.\n\n**Task 4 — scenarios.md F-abortfraction OOS banner:** Equivalent banner prepended naming rewind.abortContextFraction. Existing scenario text preserved.\n\n**Additional fixes required (bugs discovered during implementation):**\n\nThe PRP assumed the M2 hideEntryIds pin made hiding deterministic, but 4 underlying bugs prevented it from working:\n\n1. **Branch order bug (filter.ts + rewind.ts):** `getBranch().slice().reverse()` produced leaf-to-root when `mapEntryIdsToMessageIndices` assumed root-to-leaf (same order as Pi's context messages). Fixed by removing the unnecessary `.reverse()`.\n\n2. **setCheckpoint targeting non-context entries (markers.ts):** `setCheckpoint` labeled `getLeafId()` which could be a turn-metric (type:custom, not context-producing). `mapEntryIdsToMessageIndices` only walks context-producing entries, so the target resolved to nothing → K=0. Fixed to label the last context-producing entry on the branch.\n\n3. **Checkpoint latest:user guard too aggressive (rewind.ts + transforms.ts):** The tool-layer BUG-003 guard refused checkpoint rewinds when the latest user was in the removal set. But in command-driven flows, the latest user is a seed prompt (not the current ask). The guard was removed from the tool layer; the filter layer now trims the removal set to exclude the latest user for checkpoint granularity, preserving the rewind while protecting the current ask.\n\n4. **Test fixtures had wrong branch order (rewind.test.ts + filter.test.ts):** All branch arrays were leaf-to-root (matching the old buggy code). Updated to root-to-leaf to match the corrected `getBranch()` behavior.\n\nAll changes validated: tsc (0 errors), npm test (697 passed, 2 skipped — same as baseline), npm run smoke (9/9 passed, exit 0). The SOFT lines 'seed hiding not verified' and 'checkpoint seed hiding not verified' are GONE. The consumed SOFT line correctly remains."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 17ms\n ✓ test/transforms.test.ts  (130 tests) 21ms\n ✓ test/config.test.ts  (24 tests) 12ms\n ✓ test/settingsLoader.test.ts  (17 tests) 13ms\n ✓ test/runtime.test.ts  (17 tests) 12ms\n ✓ test/ledger.test.ts  (39 tests) 11ms\n ✓ test/turn_metric.test.ts  (17 tests) 9ms\n ✓ test/nudges.test.ts  (26 tests) 7ms\n ✓ test/log.test.ts  (15 tests) 25ms\n ✓ test/drift_nudge.test.ts  (9 tests) 7ms\n ✓ test/pipeline.test.ts  (47 tests) 44ms\n ✓ test/markers.test.ts  (44 tests) 20ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/tokens.test.ts  (51 tests) 45ms\n ✓ test/integration/load.test.ts  (1 test) 3ms\n ✓ test/tools/audit.test.ts  (45 tests) 18ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 10ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/edge-cases.test.ts  (35 tests) 38ms\n ✓ test/index.test.ts  (6 tests) 866ms\n ✓ test/tools/rewind.test.ts  (36 tests) 16ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 1081ms\n ✓ test/branch-isolation.test.ts  (4 tests) 17ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  09:02:11\n   Duration  1.80s (transform 2.36s, setup 2ms, collect 9.69s, tests 2.31s, environment 4ms, prepare 3.46s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint not consumed (auto-expiry not yet implemented — spec/05 §3 step 5; orthogonal to hideEntryIds)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T13:03:30.514Z"
+      },
+      "createdAt": "2026-08-11T13:03:30.514Z"
+    }
+  ],
+  "lastModified": "2026-08-11T13:03:30.514Z"
+}

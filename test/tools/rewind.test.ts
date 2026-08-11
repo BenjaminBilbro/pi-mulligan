@@ -353,13 +353,13 @@ describe("mulligan_rewind — success: last_tool_call_group", () => {
   it("persists marker + note; text names granularity + K; payload exact", async () => {
     const { appended, sent, pi } = makePi();
     const callId = "tc-rewind";
-    // branch: LEAF→ROOT (getBranch's order). resolvePreview reverses internally to ROOT→LEAF.
+    // branch: ROOT→LEAF (getBranch()'s order). resolvePreview uses it directly.
     // A user msg, then an assistant(toolCall)+toolResult unit (the "last tool group")
     // Use DIFFERENT ids from callId so excludeToolCallId doesn't skip this group
     const branch = [
-      msgEntry(result("tc-1")),
-      msgEntry(asst("tc-1")),
       msgEntry(user("hi")),
+      msgEntry(asst("tc-1")),
+      msgEntry(result("tc-1")),
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -412,12 +412,13 @@ describe("mulligan_rewind — success: last_tool_call_group", () => {
     const callId = "tc-99";
     // TWO tool groups: first group (tc-1) should be the one removed (it's the last non-excluded),
     // second group (tc-99 = the rewind's own) excluded by excludeToolCallId
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      msgEntry(result("tc-99")), // the rewind's own tool call (same id as excludeToolCallId)
-      msgEntry(asst("tc-99")),
-      msgEntry(result("tc-1")),
-      msgEntry(asst("tc-1")),
       msgEntry(user("hi")),
+      msgEntry(asst("tc-1")),
+      msgEntry(result("tc-1")),
+      msgEntry(asst("tc-99")),
+      msgEntry(result("tc-99")), // the rewind's own tool call (same id as excludeToolCallId)
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -476,9 +477,9 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
     const { appended, pi } = makePi();
     const callId = "mut-1";
     // assistant issues BOTH a write and a bash in ONE message (single toolGroup → both side effects in ledger)
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      msgEntry(result("b1")),
-      msgEntry(result("w1")),
+      msgEntry(user("hi")),
       msgEntry({
         role: "assistant",
         content: [
@@ -486,7 +487,8 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
           { type: "toolCall", id: "b1", name: "bash", arguments: { command: "rm -rf /tmp/scratch" } },
         ],
       }),
-      msgEntry(user("hi")),
+      msgEntry(result("w1")),
+      msgEntry(result("b1")),
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -502,13 +504,14 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
   it("hidden span with only reads → NO mutation warning", async () => {
     const { pi } = makePi();
     const callId = "read-1";
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      msgEntry(result(callId)),
+      msgEntry(user("hi")),
       msgEntry({
         role: "assistant",
         content: [{ type: "toolCall", id: callId, name: "read", arguments: { path: "/tmp/foo.ts" } }],
       }),
-      msgEntry(user("hi")),
+      msgEntry(result(callId)),
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -522,10 +525,11 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
     setConfig({ rewind: { requireMutationWarning: false } });
     const { pi } = makePi();
     const callId = "w1";
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      msgEntry(result("w1")),
-      msgEntry(asstWrite("w1", "/tmp/out.txt")),
       msgEntry(user("hi")),
+      msgEntry(asstWrite("w1", "/tmp/out.txt")),
+      msgEntry(result("w1")),
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -678,10 +682,11 @@ describe("mulligan_rewind — hideEntryIds capture (BUG-002 pin; P1.M2.T1.S3)", 
   it("last_tool_call_group rewind pins hideEntryIds = the resolved toolGroup's entry ids", async () => {
     const { appended, pi } = makePi();
     const callId = "tc-rewind";
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      { type: "message", id: "e-result", message: result("tc-1") },
-      { type: "message", id: "e-asst", message: asst("tc-1") },
       { type: "message", id: "e-user", message: user("hi") },
+      { type: "message", id: "e-asst", message: asst("tc-1") },
+      { type: "message", id: "e-result", message: result("tc-1") },
     ];
     const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
@@ -719,20 +724,18 @@ describe("mulligan_rewind — hideEntryIds capture (BUG-002 pin; P1.M2.T1.S3)", 
 
 // ── checkpoint latest:user protected guard (BUG-003 tool layer; spec/06 §8) ──────────
 
-describe("mulligan_rewind — checkpoint latest:user protected guard (BUG-003 tool layer; spec/06 §8)", () => {
-  it("BUG-003 repro: checkpoint targetId precedes a LATER user message → refused; no marker, no note", async () => {
+describe("mulligan_rewind — checkpoint latest:user protection (BUG-003; spec/06 §8)", () => {
+  it("checkpoint targetId precedes a LATER user message → tool proceeds; filter trims removal to protect latest:user", async () => {
     const { appended, sent, pi } = makePi();
-    // branch is LEAF→ROOT order. resolvePreview reverses to ROOT→LEAF internally.
-    // Label entry yields [] context messages (doesn't shift indices).
-    // ROOT→LEAF snapshot: u0(asst) → a1 → r1 → u1(LATEST) → [label:cp]
-    // iLatestUser = index of u1 (the last role:"user")
-    // checkpoint targetId = e-a1 → remove includes indices after a1's position, which includes u1
+    // branch: ROOT→LEAF order (getBranch()'s order). resolvePreview uses it directly.
+    // The tool-layer guard was removed — the filter's protectedOk now handles latest:user
+    // by trimming the removal set (for checkpoint granularity) instead of blocking the rewind.
     const branch = [
-      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
-      { type: "message", id: "e-u1", message: user("u1 LATEST ask — should be protected") },
-      { type: "message", id: "e-r1", message: result("a1") },
-      { type: "message", id: "e-a1", message: asst("a1") },
       { type: "message", id: "e-u0", message: user("u0 original") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-u1", message: user("u1 LATEST ask") },
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
     ];
     const { ctx } = makeCtx({
       entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
@@ -740,25 +743,25 @@ describe("mulligan_rewind — checkpoint latest:user protected guard (BUG-003 to
       branch,
     });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "checkpoint", checkpoint: "cp" });
-    expect(firstText(res)).toMatch(/^Mulligan: refused — would cross a protected message/);
-    expect(firstText(res)).toContain("checkpoint rewind would remove the latest user message");
-    expect(appended).toHaveLength(0);
-    expect(sent).toHaveLength(0);
-    expect(res.details).toEqual({ granularity: "checkpoint" });
+    // Tool succeeds — marker persisted (protection is at the filter layer now)
+    expect(firstText(res)).toMatch(/^Mulligan: rewound checkpoint/);
+    expect(appended).toHaveLength(1);
+    expect(res.details.granularity).toBe("checkpoint");
   });
 
   it("positive control: checkpoint that does NOT cross latest:user still succeeds (no over-refusal)", async () => {
     const { appended, pi } = makePi();
-    // branch LEAF→ROOT. ROOT→LEAF: u0(only user) → a1 → r1 → a2 → r2 → [label:cp]
+    // branch ROOT→LEAF (getBranch()'s order). resolvePreview uses it directly.
+    // ROOT→LEAF: u0(only user) → a1 → r1 → a2 → r2 → [label:cp]
     // iLatestUser = 0 (u0, the only user). checkpoint targetId = e-a1.
-    // resolveCheckpoint remove = indices after a1 → [3,4] (a2,r2) — does NOT include 0.
+    // resolveCheckpoint remove = indices after a1 → [2,3,4] (r1,a2,r2) — does NOT include 0.
     const branch = [
-      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
-      { type: "message", id: "e-r2", message: result("a2") },
-      { type: "message", id: "e-a2", message: asst("a2") },
-      { type: "message", id: "e-r1", message: result("a1") },
-      { type: "message", id: "e-a1", message: asst("a1") },
       { type: "message", id: "e-u0", message: user("only user") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-a2", message: asst("a2") },
+      { type: "message", id: "e-r2", message: result("a2") },
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
     ];
     const { ctx } = makeCtx({
       entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
@@ -775,12 +778,13 @@ describe("mulligan_rewind — checkpoint latest:user protected guard (BUG-003 to
     setConfig({ rewind: { protectedRoles: ["first:user"] } });
     const { appended, sent, pi } = makePi();
     // Same BUG-003 fixture: checkpoint targetId precedes a later user message
+    // branch: ROOT→LEAF (getBranch()'s order)
     const branch = [
-      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
-      { type: "message", id: "e-u1", message: user("u1 LATEST ask") },
-      { type: "message", id: "e-r1", message: result("a1") },
-      { type: "message", id: "e-a1", message: asst("a1") },
       { type: "message", id: "e-u0", message: user("u0 original") },
+      { type: "message", id: "e-a1", message: asst("a1") },
+      { type: "message", id: "e-r1", message: result("a1") },
+      { type: "message", id: "e-u1", message: user("u1 LATEST ask") },
+      { type: "label", id: "lbl-cp", targetId: "e-a1", label: "mulligan:checkpoint:cp" },
     ];
     const { ctx } = makeCtx({
       entries: [{ type: "label", targetId: "e-a1", label: "mulligan:checkpoint:cp" }],
