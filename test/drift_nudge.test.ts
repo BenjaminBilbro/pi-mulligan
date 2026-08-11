@@ -32,7 +32,7 @@ function makeCtx(opts: {
 } = {}): ExtensionContext {
   const sessionId = opts.sessionId ?? "s1";
   const entries = opts.entries ?? [];
-  const branch = opts.branch ?? [];
+  const branch = opts.branch ?? entries;
 
   return {
     sessionManager: {

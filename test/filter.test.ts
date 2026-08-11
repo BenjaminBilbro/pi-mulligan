@@ -51,7 +51,7 @@ function makeCtx(opts: {
 } = {}): ExtensionContext {
   const sessionId = opts.sessionId ?? "s1";
   const entries = opts.entries ?? [];
-  const branch = opts.branch ?? [];
+  const branch = opts.branch ?? entries;
 
   return {
     sessionManager: {
@@ -234,8 +234,8 @@ describe("readMarkers", () => {
     expect(result.shrinks).toHaveLength(0);
   });
 
-  it("NEVER throws when getEntries throws → returns empty bundle", () => {
-    const ctx = makeCtx({ throwOnGetEntries: true });
+  it("NEVER throws when getBranch throws → returns empty bundle", () => {
+    const ctx = makeCtx({ throwOnGetBranch: true });
     expect(() => readMarkers(ctx)).not.toThrow();
     const result = readMarkers(ctx);
     expect(result).toEqual({ rewinds: [], shrinks: [], metric: null });
@@ -482,9 +482,10 @@ describe("contextHandler", () => {
       entries: [], // overridden below
     });
 
-    // Override getEntries to capture the mutable array
+    // Override getEntries AND getBranch to capture the mutable array
     const mutableEntries: unknown[] = [];
     (ctx.sessionManager as any).getEntries = () => mutableEntries;
+    (ctx.sessionManager as any).getBranch = () => mutableEntries;
 
     // First call — no markers
     const messages = [{ role: "user", content: "hi" }];
@@ -527,6 +528,10 @@ describe("contextHandler", () => {
       { type: "message", id: "entry-3", parentId: "entry-1" },
       { type: "label", id: "cp-1", parentId: "entry-1", targetId: "entry-1", label: "mulligan:checkpoint:my-cp" },
       { type: "message", id: "entry-1", parentId: null },
+      rewindEntry(1, {
+        granularity: "checkpoint",
+        checkpoint: "my-cp",
+      }),
     ];
 
     const ctx = makeCtx({
@@ -537,7 +542,7 @@ describe("contextHandler", () => {
           checkpoint: "my-cp",
         }),
       ],
-      branch: branchLeafToRoot, // LEAF→ROOT (Pi's getBranch return)
+      branch: branchLeafToRoot, // LEAF→ROOT (Pi's getBranch return) — includes the rewind marker for readMarkers
     });
 
     // Messages: [user (entry-1), assistant1 (entry-3)]

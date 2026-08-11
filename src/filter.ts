@@ -80,7 +80,7 @@ function readOwn(obj: unknown, key: string): unknown {
 // ── readMarkers (spec/06 §1; spec/02 C12; fail-open E13) ─────────────────────
 
 /**
- * readMarkers — scan `ctx.sessionManager.getEntries()` FRESH for persisted Mulligan markers.
+ * readMarkers — scan `ctx.sessionManager.getBranch()` FRESH for persisted Mulligan markers.
  *
  * Scans ALL entries for `type==="custom"` with `customType` starting with `"mulligan:"`, then
  * buckets by (customType, kind): `mulligan:rewind`/`rewind` → rewinds[], `mulligan:shrink`/`shrink`
@@ -90,10 +90,10 @@ function readOwn(obj: unknown, key: string): unknown {
  * Skips notes (custom_message), labels (checkpoints), malformed entries, and unknown mulligan:*
  * types WITHOUT throwing (fail-open at marker level — E13).
  *
- * NEVER throws: malformed entries → skip; getEntries() throws → empty bundle.
+ * NEVER throws: malformed entries → skip; getBranch() throws → empty bundle.
  * C12: reads FRESH each call (never caches ctx/sessionManager handle).
  *
- * @param ctx the ExtensionContext (reads ctx.sessionManager.getEntries() each call)
+ * @param ctx the ExtensionContext (reads ctx.sessionManager.getBranch() each call)
  * @returns { rewinds, shrinks, metric }
  */
 export function readMarkers(ctx: ExtensionContext): MarkersBundle {
@@ -103,7 +103,7 @@ export function readMarkers(ctx: ExtensionContext): MarkersBundle {
 
   let entries: unknown[];
   try {
-    entries = ctx.sessionManager.getEntries();
+    entries = ctx.sessionManager.getBranch();
   } catch {
     return { rewinds, shrinks, metric: null };
   }

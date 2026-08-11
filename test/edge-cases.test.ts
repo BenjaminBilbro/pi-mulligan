@@ -99,7 +99,7 @@ function makeCtx(opts: {
   const sessionId = opts.sessionId ?? "s1";
   const leafId: string | null = opts.leafId === undefined ? "leaf-1" : opts.leafId;
   const entries = opts.entries ?? [];
-  const branch = opts.branch ?? [];
+  const branch = opts.branch ?? entries;
   const contextEntries = opts.contextEntries ?? [];
   const labels = opts.labels ?? new Map<string, string>();
 
@@ -665,8 +665,8 @@ describe("E13 — tool/handler throws → fail-open pass-through (spec/08 E13)",
     const ctx = makeCtx({ throwOnGetEntries: true, sessionId: "s-failopen2" });
     const event = makeEvent([user("hi")]);
     const result = contextHandler(event, ctx);
-    // getEntries throwing is caught by readMarkers (returns empty bundle),
-    // but the filter may still return {messages} for the input. Check it doesn't throw.
+    // readMarkers now reads getBranch (which defaults to entries, not throwing here),
+    // so the filter may still return {messages} for the input. Check it doesn't throw.
     expect(() => contextHandler(event, ctx)).not.toThrow();
   });
 

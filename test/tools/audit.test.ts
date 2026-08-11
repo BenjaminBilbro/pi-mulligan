@@ -70,7 +70,7 @@ function makeCtx(opts: {
 } = {}) {
   const sessionId = opts.sessionId ?? "s1";
   const entries = opts.entries ?? [];
-  const branch = opts.branch ?? [];
+  const branch = opts.branch ?? entries;
   const contextEntries = opts.contextEntries ?? [];
 
   const sessionManager = {

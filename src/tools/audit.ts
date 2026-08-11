@@ -300,7 +300,7 @@ export function messageBytes(msg: Record<string, unknown>): number {
 }
 
 /**
- * listCheckpoints — scan getEntries() output for LabelEntries with `mulligan:checkpoint:` prefix,
+ * listCheckpoints — scan getBranch() output for LabelEntries with `mulligan:checkpoint:` prefix,
  * using a latest-wins label map (a clear entry sets undefined overwriting a prior set — a consumed
  * checkpoint does NOT stay listed). Emit active checkpoint names prefix-stripped, in first-occurrence order.
  *
@@ -560,7 +560,7 @@ async function auditExecute(
     // (5) Read active markers + checkpoints
     const markers = readMarkers(ctx);
     const checkpointNames = listCheckpoints(
-      ctx.sessionManager.getEntries() as unknown[],
+      ctx.sessionManager.getBranch() as unknown[],
     );
 
     // (6) Render the report

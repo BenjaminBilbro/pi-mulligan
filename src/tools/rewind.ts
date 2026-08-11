@@ -198,7 +198,7 @@ function emptyLedger(): FileLedger {
 }
 
 /**
- * countRewindMarkers — the depth-guard source. Scan `ctx.sessionManager.getEntries()` for entries
+ * countRewindMarkers — the depth-guard source. Scan `ctx.sessionManager.getBranch()` for entries
  * where `type === "custom" && customType === "mulligan:rewind"`; return the count. Markers are permanent (never
  * cleared), so ALL persisted rewind markers count toward maxDepth. Defensive (never throws; a throwing-Proxy
  * entry or a non-array → the entry is skipped / the count is 0). Module-local.
@@ -207,7 +207,7 @@ function countRewindMarkers(ctx: ExtensionContext): number {
   let count = 0;
   let entries: unknown;
   try {
-    entries = ctx.sessionManager.getEntries();
+    entries = ctx.sessionManager.getBranch();
   } catch {
     return 0; // never let the depth guard throw
   }
@@ -229,13 +229,13 @@ function countRewindMarkers(ctx: ExtensionContext): number {
  * checkpointExists — the checkpoint-existence check (step 3, E10). A checkpoint is ACTIVE iff its label
  * currently maps to the `mulligan:checkpoint:<name>` string in Pi's LATEST-WINS label map. That map is
  * append-only in the raw entry stream (a `setLabel(id, undefined)` appends a clear entry), so scanning raw
- * `getEntries()` for a string match would find the HISTORICAL label even after it was consumed (validation
+ * `getBranch()` for a string match would find the HISTORICAL label even after it was consumed (validation
  * issue 1b). Pi's `ctx.sessionManager.getLabel(id)` applies the latest-wins semantics: it returns `undefined`
  * once a clear entry follows the set, which is exactly the consumed state we must refuse. We therefore walk
- * raw entries to discover candidate `label` targets, then ask `getLabel(targetId)` whether each is CURRENTLY
- * active. Defensive (never throws — a throwing getEntries/getLabel/Proxy trap → false). Module-local.
+ * branch entries to discover candidate `label` targets, then ask `getLabel(targetId)` whether each is CURRENTLY
+ * active. Defensive (never throws — a throwing getBranch/getLabel/Proxy trap → false). Module-local.
  *
- * @param ctx  the Pi ExtensionContext (getEntries to discover candidates; getLabel for latest-wins resolution)
+ * @param ctx  the Pi ExtensionContext (getBranch to discover candidates; getLabel for latest-wins resolution)
  * @param name the checkpoint name (the suffix after `mulligan:checkpoint:`)
  * @returns true iff some entry's label target currently maps to `mulligan:checkpoint:<name>`
  */
@@ -244,7 +244,7 @@ function checkpointExists(ctx: ExtensionContext, name: string): boolean {
   const candidates = new Set<string>();
   let entries: unknown;
   try {
-    entries = ctx.sessionManager.getEntries();
+    entries = ctx.sessionManager.getBranch();
   } catch {
     return false;
   }

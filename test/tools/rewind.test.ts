@@ -105,7 +105,7 @@ function makeCtx(opts: {
   const sessionId = opts.sessionId ?? "s1";
   const leafId: string | null = opts.leafId === undefined ? "leaf-1" : opts.leafId;
   const entries = opts.entries ?? [];
-  const branch = opts.branch ?? [];
+  const branch = opts.branch ?? entries;
   const labels = opts.labels ?? new Map<string, string>();
 
   const sessionManager = {
@@ -435,7 +435,7 @@ describe("mulligan_rewind — success: checkpoint", () => {
     const { ctx } = makeCtx({
       entries: [checkpointLabelEntry("my-cp", "entry-5")],
       labels: new Map([["entry-5", "mulligan:checkpoint:my-cp"]]),
-      branch: [],
+      branch: [checkpointLabelEntry("my-cp", "entry-5")],
     });
     const res = await run(pi, ctx, {
       note: VALID_NOTE,

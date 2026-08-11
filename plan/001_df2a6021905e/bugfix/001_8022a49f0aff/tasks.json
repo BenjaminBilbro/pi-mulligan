@@ -197,14 +197,14 @@
               "id": "P1.M3.T1",
               "type": "Task",
               "title": "Scope marker/label reads to the current branch (BUG-004)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Switch getEntries() → getBranch() in the four marker/label reads: filter.ts readMarkers, tools/rewind.ts countRewindMarkers + checkpointExists, and the listCheckpoints call site in tools/audit.ts. getBranch() returns the current branch only; all four consumers are order-insensitive (bucketing/counting/latest-wins-via-getLabel candidate discovery), so no reordering is needed.",
               "subtasks": [
                 {
                   "id": "P1.M3.T1.S1",
                   "type": "Subtask",
                   "title": "Switch getEntries→getBranch in 4 sites + branch-isolation test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (external_deps.md §5 + design_decisions.md BUG-004) getEntries() returns EVERY branch; getBranch() returns the current branch root→leaf and is already used by contextHandler + resolveCheckpoint. The four leak sites: filter.ts readMarkers (~line 106), tools/rewind.ts countRewindMarkers (~207) + checkpointExists (~244), tools/audit.ts listCheckpoints CALL SITE (~563 — listCheckpoints itself is a pure fn taking entries[], so only its caller changes). All four are order-insensitive: readMarkers buckets by customType/kind; countRewindMarkers counts; checkpointExists discovers candidate targetIds then asks getLabel(id) for latest-wins; listCheckpoints builds its own latest-wins labelMap.\n2. INPUT: ctx.sessionManager.getBranch() (returns BranchEntry[]/SessionEntry[] root→leaf).\n3. LOGIC: In each of the four sites replace `ctx.sessionManager.getEntries()` with `ctx.sessionManager.getBranch()`. Keep the existing try/catch + defensive Array.isArray guards unchanged. For readMarkers, the bucketing loop is identical over either source. Do NOT change getBranch().slice().reverse() usages elsewhere (they are correct as-is).\n4. OUTPUT: markers/labels from sibling branches no longer apply/count after /tree navigation. Add a test (test/filter.test.ts or a focused unit) with a mock sessionManager whose getBranch() returns ONLY branch-B entries while getEntries() returns A+B; assert readMarkers returns only branch-B rewinds/shrinks, and (for rewind) countRewindMarkers counts only branch-B markers. Verify the 635-test suite stays green (existing tests that mock getEntries may need their mock to ALSO provide getBranch returning the same array — update mocks minimally).",
