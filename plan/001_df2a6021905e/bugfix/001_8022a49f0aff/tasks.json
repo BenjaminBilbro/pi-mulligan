@@ -92,14 +92,14 @@
               "id": "P1.M2.T1",
               "type": "Task",
               "title": "BUG-003 — live last_tool_call_group fallback composes correctly across multiple rewinds",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The hideEntryIds PIN path is correct (pipeline.test.ts:695). The LIVE fallback (resolveLastToolCallGroup called with only the current marker's excludeToolCallId) inverts: rewind#1 sheds rewind#2's confirmation and vice-versa. Fix: collect ALL rewind excludeToolCallIds into a Set once in filterPipeline and pass it to resolveLastToolCallGroup so the live fallback never re-targets another rewind's own group.",
               "subtasks": [
                 {
                   "id": "P1.M2.T1.S1",
                   "type": "Subtask",
                   "title": "resolveLastToolCallGroup takes the set of all rewind excludeToolCallIds; filterPipeline passes it; flip the LIVE-fallback test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1",
