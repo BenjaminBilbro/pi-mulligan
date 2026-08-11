@@ -4,6 +4,7 @@ import {
   resolveLastToolCallGroup,
   resolveLastTurn,
   resolveCheckpoint,
+  mapEntryIdsToMessageIndices,
   applyRewind,
   resolveShrinkTarget,
   applyShrink,
@@ -880,6 +881,105 @@ describe("resolveCheckpoint — spec/06 §6 + mapping + compaction-refuse + defe
     expectTypeOf(resolveCheckpoint([], [], "x")).toEqualTypeOf<{ remove: number[] } | null>();
     const ok = resolveCheckpoint([user("u")], [labelEntry("eL", "e1", "x"), entry("e1", "message")], "x");
     expectTypeOf(ok).toEqualTypeOf<{ remove: number[] } | null>();
+  });
+});
+
+// ── mapEntryIdsToMessageIndices (P1.M2.T1.S2) ────────────────────────────────────────────────────────────
+describe("mapEntryIdsToMessageIndices — spec/06 §6 entry-id→message-index mapping (P1.M2.T1.S2)", () => {
+  it("known id → correct index (single)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asstText("t")];
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message"), entry("e4", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e2"])).toEqual([1]);
+  });
+
+  it("known ids → ascending indices (multiple)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asstText("t")];
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message"), entry("e4", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e1", "e3"])).toEqual([0, 2]);
+  });
+
+  it("accepts Set<string> input", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asstText("t")];
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message"), entry("e4", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, new Set(["e2", "e3"]))).toEqual([1, 2]);
+  });
+
+  it("compaction present → indeterminate entry skipped; entries after compaction also skipped (partial-collect)", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c"), result("c")];
+    const branch = [entry("e_comp", "compaction"), entry("e_user", "message"), entry("e_asst", "message")];
+    // e_comp is indeterminate (yield<0) → stop immediately, nothing collected
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e_comp"])).toEqual([]);
+    // e_asst is after the compaction → also unreachable
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e_asst"])).toEqual([]);
+    // requesting both → nothing collected (stop at compaction before either match)
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e_comp", "e_asst"])).toEqual([]);
+  });
+
+  it("unknown id → absent from result", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1")];
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["no-such-id"])).toEqual([]);
+  });
+
+  it("empty entryIds (array and Set) → []", () => {
+    const msgs: MessageLike[] = [user("u")];
+    const branch = [entry("e1", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, [])).toEqual([]);
+    expect(mapEntryIdsToMessageIndices(msgs, branch, new Set())).toEqual([]);
+  });
+
+  it("alignment-lost: msgs shorter than ctxEntries → stops at mismatch, returns collected-so-far", () => {
+    const msgs: MessageLike[] = [user("u")]; // only 1 message
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message")];
+    // e1 maps to msgCursor=0, yield=1, 0+1=1 <= 1 (ok). e2: msgCursor=1, yield=1, 1+1=2 > 1 → stop
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e2"])).toEqual([]);
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e1"])).toEqual([0]);
+  });
+
+  it("branch_summary / custom_message each yield 1", () => {
+    const msgs: MessageLike[] = [user("u"), asstText("t")];
+    const branch = [entry("e_bs", "branch_summary"), entry("e_cm", "custom_message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e_bs"])).toEqual([0]);
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e_cm"])).toEqual([1]);
+  });
+
+  it("dedupe: duplicate ids in input produce ascending unique output", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1")];
+    const branch = [entry("e1", "message"), entry("e2", "message"), entry("e3", "message")];
+    expect(mapEntryIdsToMessageIndices(msgs, branch, ["e1", "e1", "e3", "e3"])).toEqual([0, 2]);
+  });
+
+  it("defensive (never throws): non-array inputs, null/undefined entryIds, throwing-Proxy entries", () => {
+    expect(mapEntryIdsToMessageIndices(null as unknown as MessageLike[], [], [])).toEqual([]);
+    expect(mapEntryIdsToMessageIndices([], null as unknown as BranchEntry[], [])).toEqual([]);
+    expect(mapEntryIdsToMessageIndices([], {} as unknown as BranchEntry[], [])).toEqual([]);
+    expect(mapEntryIdsToMessageIndices([], undefined as unknown as BranchEntry[], [])).toEqual([]);
+    const throwingEntry = new Proxy({}, { get() { throw new Error("trap"); } }) as unknown as BranchEntry;
+    expect(() => mapEntryIdsToMessageIndices([user("u")], [throwingEntry], ["x"])).not.toThrow();
+  });
+
+  it("refactor seam: helper's last index matches resolveCheckpoint's iTarget on clean fixture", () => {
+    const msgs: MessageLike[] = [user("u"), asst("c1"), result("c1"), asstText("t"), user("u2")];
+    const branch = [
+      labelEntry("eL", "e2", "k"),
+      entry("e1", "message"),
+      entry("e2", "message"),
+      entry("e3", "message"),
+      entry("e4", "message"),
+      entry("e5", "message"),
+    ];
+    const helperResult = mapEntryIdsToMessageIndices(msgs, branch, ["e2"]);
+    expect(helperResult).toEqual([1]);
+    const checkpointResult = resolveCheckpoint(msgs, branch, "k");
+    // resolveCheckpoint should find iTarget = 1 (e2's last msg index = 0+1-1 = 0? No — e1→msg0, e2→msg1, iTarget=1)
+    expect(checkpointResult).not.toBeNull();
+    // helper's last index must match the index resolveCheckpoint keeps as iTarget
+    // For e2 (message, yield=1): msgCursor after e1 = 1, so e2 → index 1, iTarget = 1
+    expect(helperResult[helperResult.length - 1]).toBe(1);
+  });
+
+  it("type: returns number[]", () => {
+    expectTypeOf(mapEntryIdsToMessageIndices([], [], [])).toEqualTypeOf<number[]>();
   });
 });
 

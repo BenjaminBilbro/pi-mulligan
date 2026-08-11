@@ -373,10 +373,8 @@ export interface BranchEntry {
  *      `mulligan:checkpoint:${checkpointName}`. None → null. targetId = its targetId; non-string/empty → null.
  *   3. ctxEntries = branchEntries (root→leaf) filtered to context-producing types (message, custom_message,
  *      branch_summary, compaction — spec/06 §6 step 2).
- *   4. Walk ctxEntries with msgCursor. For each entry: yield = entryMessageYield(entry);
- *      yield < 0 (compaction/unknown → indeterminate) OR msgCursor+yield > messages.length → null.
- *      If entry.id === targetId → iTarget = msgCursor + yield - 1; break.
- *      Else msgCursor += yield. Loop end without match → null.
+ *   4. (P1.M2.T1.S2) Delegates the target-id → message-index lookup to mapEntryIdsToMessageIndices
+ *      (same walk); empty result ⇒ refuse (null). iTarget = last index of the single-element mapping.
  *   4b. UNIT-SNAP: partitionIntoUnits(messages); if iTarget is inside a toolGroup, advance to the unit's MAX index
  *      so the assistant + ALL its toolResults are KEPT (never orphan — spec/06 §2, api_verification §6.4).
  *   5. remove (ascending): for j from (unit-snapped) iTarget+1..end, skip if rewindOwnIndices.has(j) or
@@ -420,22 +418,11 @@ export function resolveCheckpoint(
     isContextProducingType(isRecord(e) ? readOwn(e, "type") : undefined),
   );
 
-  // 4) Walk in parallel with messages; stop at the target entry → iTarget = its last message index.
-  let msgCursor = 0;
-  let iTarget = -1;
-  let found = false;
-  for (const e of ctxEntries) {
-    const y = entryMessageYield(e); // 1 for message/custom_message/branch_summary; -1 for compaction/unknown
-    if (y < 0) return null; // compaction (or unknown) on the walked range → mapping indeterminate → refuse
-    if (msgCursor + y > messages.length) return null; // alignment lost → refuse
-    if (isRecord(e) && readOwn(e, "id") === targetId) {
-      iTarget = msgCursor + y - 1; // the entry's LAST message index — KEPT
-      found = true;
-      break;
-    }
-    msgCursor += y;
-  }
-  if (!found) return null; // targetId labels a non-context-producing entry → refuse
+  // 4) (P1.M2.T1.S2) Delegate target-id → message-index lookup to mapEntryIdsToMessageIndices (same walk).
+  //    Empty result ⇒ target not found OR indeterminate (compaction/alignment-loss) → refuse (null).
+  const mapped = mapEntryIdsToMessageIndices(messages, branchEntries, [targetId]);
+  if (mapped.length === 0) return null;
+  let iTarget = mapped[mapped.length - 1]; // the entry's LAST message index — KEPT
 
   // 4b) UNIT-SNAP (BUG-003 secondary / spec/06 §2): if iTarget is inside a toolGroup unit, snap to the unit's MAX
   //     index so the entire unit (assistant + all results) is KEPT and remove begins strictly after it.
@@ -480,6 +467,71 @@ function entryMessageYield(entry: unknown): number {
 /** Module-private: is this entry type one that produces a context message (spec/06 §6 step 2 list)? */
 function isContextProducingType(type: unknown): boolean {
   return type === "message" || type === "custom_message" || type === "branch_summary" || type === "compaction";
+}
+
+/**
+ * mapEntryIdsToMessageIndices — pure entry-id→message-index mapper (P1.M2.T1.S2).
+ *
+ * Given a message list, a branchEntries list, and a SET of entry ids, returns the ASCENDING + UNIQUE
+ * message indices corresponding to those entries. This generalizes resolveCheckpoint's step-4 walk
+ * (entryMessageYield + ctxEntries + msgCursor) into a reusable, unit-tested seam.
+ *
+ * ALGORITHM: rebuilds ctxEntries (branchEntries filtered to context-producing types) internally,
+ * then walks with msgCursor mirroring resolveCheckpoint step 4 (spec/06 §6):
+ *   1. yield = entryMessageYield(entry);
+ *   2. yield < 0 (compaction/unknown → indeterminate) → STOP, return collected-so-far.
+ *   3. msgCursor + yield > messages.length (alignment lost) → STOP, return collected-so-far.
+ *   4. If entry.id ∈ idSet → push range [msgCursor .. msgCursor+yield-1].
+ *   5. msgCursor += yield; continue (does NOT break on match — collects EVERY matched id).
+ *
+ * SEMANTIC DISTINCTION from resolveCheckpoint step 4: resolveCheckpoint REFUSES (returns null)
+ * on indeterminacy or alignment loss. This helper PARTIAL-COLLECTS — it returns only the indices
+ * collected so far (never throws, never guesses). Callers that need the refuse-on-indeterminate
+ * semantic (e.g. resolveCheckpoint) pass [targetId] and treat an empty result as 'refuse'.
+ *
+ * DEFENSIVE: non-array messages/branchEntries → []; non-string ids silently skipped; empty idSet → [].
+ * Never mutates inputs.
+ *
+ * @param messages  the message list (MessageLike[])
+ * @param branchEntries  branch entry list (BranchEntry[])
+ * @param entryIds  a Set<string> or string[] of entry ids to locate
+ * @returns ascending + unique message indices for the matched entries; empty array if none found
+ */
+export function mapEntryIdsToMessageIndices(
+  messages: MessageLike[],
+  branchEntries: BranchEntry[],
+  entryIds: Set<string> | string[],
+): number[] {
+  if (!Array.isArray(messages) || !Array.isArray(branchEntries)) return [];
+  const idSet = normalizeEntryIdSet(entryIds);
+  if (idSet.size === 0) return [];
+  const ctxEntries = branchEntries.filter((e) =>
+    isContextProducingType(isRecord(e) ? readOwn(e, "type") : undefined),
+  );
+  const collected: number[] = [];
+  let msgCursor = 0;
+  for (const e of ctxEntries) {
+    const y = entryMessageYield(e);
+    if (y < 0) break; // indeterminate (compaction/unknown) → stop, return collected-so-far
+    if (msgCursor + y > messages.length) break; // alignment lost → stop, return collected-so-far
+    const id = isRecord(e) ? readOwn(e, "id") : undefined;
+    if (typeof id === "string" && id.length > 0 && idSet.has(id)) {
+      for (let k = msgCursor; k < msgCursor + y; k++) collected.push(k);
+    }
+    msgCursor += y;
+  }
+  return [...new Set(collected)].sort((a, b) => a - b);
+}
+
+/** Module-private: normalize entryIds (Set<string>|string[]|unknown) into a clean Set<string>, skipping non-strings. */
+function normalizeEntryIdSet(entryIds: unknown): Set<string> {
+  const out = new Set<string>();
+  if (entryIds instanceof Set) {
+    for (const id of entryIds) if (typeof id === "string" && id.length > 0) out.add(id);
+  } else if (Array.isArray(entryIds)) {
+    for (const id of entryIds) if (typeof id === "string" && id.length > 0) out.add(id);
+  }
+  return out;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
