@@ -1,0 +1,364 @@
+{
+  "backlog": [
+    {
+      "id": "P1",
+      "type": "Phase",
+      "title": "Restore spec compliance — fix the 8 TEST_RESULTS.md defects",
+      "status": "Ready",
+      "description": "Fix all 8 bugs reported in the TEST_RESULTS.md mini-PRD: 2 critical (BUG-001 inert config, BUG-002 stacked-rewind content reappearance), 1 major (BUG-003 checkpoint latest:user), 5 minor/cosmetic (BUG-004 branch scoping, BUG-005 silent persist failure, BUG-006 /reload, BUG-007 smoke SOFT coverage, BUG-008 audit suggestion). All fixes are surgical to the existing src/ modules; no new features. Baseline is GREEN (635 vitest tests pass). Every subtask implies write-failing-test → implement → pass (implicit TDD); code is not done without tests. Research findings live in plan/001_df2a6021905e/bugfix/001_8022a49f0aff/architecture/ (system_context.md, external_deps.md, design_decisions.md).",
+      "milestones": [
+        {
+          "id": "P1.M1",
+          "type": "Milestone",
+          "title": "Configuration system wiring (BUG-001 critical + BUG-006 minor)",
+          "status": "Planned",
+          "description": "The entire configuration surface is inert (setConfig is dead code; getConfig always returns DEFAULT_CONFIG). Pi's ExtensionAPI exposes no settings accessor, so the only way to honor spec/09 §1 + README §3 is to read settings.json from disk. This milestone wires a new disk-reading+merge helper and calls setConfig at factory load AND on every session_start (which also fires on /reload — fixing BUG-006 in the same change). Outcome: every documented knob (enabled, thresholds, maxDepth, log.file, …) is honored, and mulligan.enabled=false makes all four tools refuse cleanly.",
+          "tasks": [
+            {
+              "id": "P1.M1.T1",
+              "type": "Task",
+              "title": "settingsLoader — pure disk-read + merge helper",
+              "status": "Planned",
+              "description": "A new Pi-free module that reads global ~/.pi/agent/settings.json and (when trusted) project-local <cwd>/.pi/settings.json, extracts the `mulligan` key, and applies project-local-over-global precedence. Never throws. Unit-testable with tmp-dir fixtures.",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T1.S1",
+                  "type": "Subtask",
+                  "title": "Create src/settingsLoader.ts — loadMulliganSettings({cwd?, isTrusted?})",
+                  "status": "Complete",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (external_deps.md §1–§2) Pi's ExtensionAPI exposes NO settings accessor — verified by grep of types.d.ts. The ONLY way to honor spec/09 §1 is to read JSON files from disk. GLOBAL: path.join(os.homedir(), \".pi\", \"agent\", \"settings.json\") (this machine HAS it; it carries top-level keys like \"packages\" — read ONLY the \"mulligan\" key, ignore the rest). LOCAL: path.join(cwd, \".pi\", \"settings.json\"), read ONLY when isTrusted===true.\n2. INPUT: opts: { cwd?: string; isTrusted?: boolean }. NO pi import (keep it pure/unit-testable). Use node:fs readFileSync, node:path join, node:os homedir — all already used elsewhere in this repo (markers.ts uses node:crypto).\n3. LOGIC: loadMulliganSettings(opts) → read global file if present+valid-JSON → its `.mulligan`; read local file ONLY if opts.isTrusted===true (if present+valid-JSON) → its `.mulligan`; MERGE = local `.mulligan` REPLACES global `.mulligan` (top-level replace, NOT deep-merge — spec/09 §1 \"project-local wins\"). Return the merged `mulligan` value (type `unknown`) or `undefined` when neither contributes a mulligan key. NEVER throws: missing/unreadable file → skip; malformed JSON → console.warn(`[mulligan] settings: ${path} unreadable: ${msg}`) + skip; non-object `.mulligan` → return it as-is (let config.ts validateConfig coerce). No caching (the caller decides when to re-read).\n4. OUTPUT: export `loadMulliganSettings` + its opts type, for consumption by P1.M1.T2.S1. When no mulligan key exists anywhere, MUST return undefined so that validateConfig(undefined) yields DEFAULT_CONFIG (verify).",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M1.T1.S2",
+                  "type": "Subtask",
+                  "title": "Unit tests test/settingsLoader.test.ts — merge, trust, never-throw",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: test convention is vitest with tmp-dir fixtures (mirror test/log.test.ts). settingsLoader is STATELESS (no module cache) so vi.resetModules() is not required. Write fixtures via node:fs + os.tmpdir().\n2. INPUT: loadMulliganSettings from ../src/settingsLoader.js (built in P1.M1.T1.S1).\n3. LOGIC: Assert each branch: (a) global-only file with a mulligan block → returns it; (b) local-only with isTrusted:true → returns it; (c) BOTH present, isTrusted:true → LOCAL mulligan WINS (assert the local value, NOT the global — this is the precedence regression guard); (d) isTrusted:false → local file is NOT read (returns global value even when a local file exists); (e) neither file present → undefined; (f) malformed JSON in global → warn emitted + falls through (undefined, or local value if local valid & trusted); (g) file present but no \"mulligan\" key → undefined; (h) never throws on any malformed input (wrap each case in expect-not-throw).\n4. OUTPUT: a passing test/settingsLoader.test.ts that is the regression guard for the merge + trust-gate + never-throw contract. Pin ONE behavior for non-object .mulligan (S1 returns it as-is) and assert that.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M1.T2",
+              "type": "Task",
+              "title": "Wire index.ts — setConfig at factory load + every session_start (fixes BUG-001 load + BUG-006 reload)",
+              "status": "Planned",
+              "description": "Call setConfig(loadMulliganSettings(...)) at factory time (global best-effort, no cwd yet) and inside the session_start handler (full read with ctx.cwd + ctx.isProjectTrusted()) for EVERY reason — session_start already fires on /reload, so this single wiring fixes both BUG-001 (never read) and BUG-006 (not re-read on reload). The existing resetRuntime call stays. The headline proof: mulligan.enabled=false in .pi/settings.json makes all four tools refuse.",
+              "subtasks": [
+                {
+                  "id": "P1.M1.T2.S1",
+                  "type": "Subtask",
+                  "title": "Wire factory + session_start handler to call setConfig",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (external_deps.md §3–§4) the factory signature `export default function (pi: ExtensionAPI): void` receives NO ctx, so project-local config (needs cwd) can ONLY be read inside an event handler. ExtensionContext exposes ctx.cwd (types.d.ts:217) and ctx.isProjectTrusted() (types.d.ts:234). SessionStartEvent.reason is \"startup\"|\"reload\"|\"new\"|\"resume\"|\"fork\" — re-read on ALL of them (cheapest correct; reload is a subset). config.ts setConfig(raw) already sets cachedConfig=validateConfig(raw) and getConfig() returns a clone.\n2. INPUT: loadMulliganSettings from ./settingsLoader.js (P1.M1.T1.S1); setConfig from ./config.js (existing).\n3. LOGIC: (a) At the TOP of the factory body (before setLogFile) wrap `try { setConfig(loadMulliganSettings({})); } catch { /* never break load */ }` — global-only best-effort. (b) In the existing `pi.on(\"session_start\", (event, ctx) => {...})` handler, BEFORE resetRuntime, add `try { setConfig(loadMulliganSettings({ cwd: ctx.cwd, isTrusted: ctx.isProjectTrusted() })); } catch { /* never break session start */ }`. Keep the existing resetRuntime(ctx.sessionManager.getSessionId()) call. Then re-call setLogFile(getConfig().log.file) AFTER setConfig so a reload picks up a changed log.file (log.file was read once at factory time; a reload may change it). Do NOT add async/await (factory stays synchronous per D8).\n4. OUTPUT: index.ts now honors settings.json. Consumed by P1.M1.T2.S2 (integration proof). DOCS: README §3's \"loaded lazily... re-read on /reload\" and \"Disabling\" claims become TRUE — but the README text edit is Mode B (P1.M5.T1); here only verify behavior.",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M1.T2.S2",
+                  "type": "Subtask",
+                  "title": "Integration test — enabled=false disables all four tools (BUG-001 headline proof)",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: test/index.test.ts already has createMockPi()/createMockCtx() helpers with vi.fn() and uses vi.resetModules() in beforeEach (config.ts caches cachedConfig at module scope — reset is REQUIRED so setConfig effects are observable per-test). The smoke harness note (jiti double-module) does NOT apply to unit/integration tests — same module instance.\n2. INPUT: the wired index.ts factory + session_start handler from P1.M1.T2.S1; loadMulliganSettings; getConfig.\n3. LOGIC: Write a test that (a) creates a tmp dir with `.pi/settings.json` containing `{\"mulligan\":{\"enabled\":false}}`; (b) builds a mock ctx whose cwd is the tmp dir and isProjectTrusted() returns true; (c) imports the factory, invokes it with a mock pi; (d) fires the session_start handler with the mock ctx; (e) asserts getConfig().enabled === false; (f) invokes one registered tool's execute (e.g. makeRewindTool's, or the handler captured in the mock) and asserts the result text starts with \"Mulligan: refused — Mulligan is disabled\". Add a second assertion that contextHandler returns undefined (pass-through) when enabled=false. Use vi.resetModules() + vi.mock or tmp files so settings are isolated per test; restore (delete the tmp settings) in afterEach.\n4. OUTPUT: a deterministic test proving BUG-001 is fixed (the README §3 \"Disabling\" contract). This is the canonical regression guard for config wiring.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M2",
+          "type": "Milestone",
+          "title": "Filter targeting & protection correctness (BUG-002 critical + BUG-003 major)",
+          "status": "Planned",
+          "description": "The filter's live relative targeting (spec D7) is correct for a SINGLE rewind but breaks under composition: a second last_tool_call_group rewind re-targets the first (BUG-002 — originally-hidden content reappears, violating success criterion #4), and the latest:user protected role is never enforced for checkpoint rewinds (BUG-003 — a checkpoint rewind can delete the current ask). Fixes: pin each rewind's resolved target onto the marker at creation time and have the filter resolve against the pin; add the latest:user branch to protectedOk and a checkpoint pre-persist guard in the rewind tool.",
+          "tasks": [
+            {
+              "id": "P1.M2.T1",
+              "type": "Task",
+              "title": "Pin rewind targets at creation (BUG-002)",
+              "status": "Planned",
+              "description": "Add an optional hideEntryIds field (anticipated by existing TODO comments in markers.ts/transforms.ts). At rewind creation, map the resolved removal indices back to their source SessionEntry ids and store them on the marker. In the filter, when a rewind carries hideEntryIds, resolve its removal set by mapping those entry ids to CURRENT message indices (via a shared entry→message helper) instead of the live relative resolver — so a later rewind cannot retarget an earlier one and originally-hidden content cannot reappear. Markers without hideEntryIds fall back to live resolution (backward compat — the existing 635-test suite stays green).",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T1.S1",
+                  "type": "Subtask",
+                  "title": "Data model — add hideEntryIds?: string[] to RewindMarker + RewindMarkerLike",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: markers.ts RewindMarker + RewindMarkerInput (Omit of envelope+id+seq+ts) and transforms.ts RewindMarkerLike both currently carry the comment \"NO hideEntryIds — that's a later fix task\" — the codebase ANTICIPATES this field. RewindMarkerInput is built in tools/rewind.ts (the payload object) — adding an optional field there is backward-compatible.\n2. INPUT: the existing RewindMarker / RewindMarkerInput (markers.ts) and RewindMarkerLike (transforms.ts) interfaces.\n3. LOGIC: Add `hideEntryIds?: string[]` to RewindMarker (markers.ts). Because RewindMarkerInput = Omit<RewindMarker, envelope+id+seq+ts>, it AUTOMATICALLY gains hideEntryIds?: string[] — verify TS agrees. Add `hideEntryIds?: string[]` to RewindMarkerLike (transforms.ts) and update its doc-comment to describe the field: \"Optional pinned target — the SessionEntry ids this rewind resolved to hide at creation time. When present and non-empty, filterPipeline resolves the removal set from these ids (stable) instead of the live granularity resolver. Absent on legacy/unpinned markers → live resolution (backward compat).\" Update/replace the stale \"NO hideEntryIds\" TODO comments. NO logic change in this subtask — types + docs only.\n4. OUTPUT: the field exists on both interfaces; consumed by P1.M2.T1.S3 (capture) and P1.M2.T1.S4 (resolve). validateConfig/DEFAULT_CONFIG are untouched (hideEntryIds is marker data, not config).",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M2.T1.S2",
+                  "type": "Subtask",
+                  "title": "Extract mapEntryIdsToMessageIndices helper in transforms.ts (refactor resolveCheckpoint's walk)",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: resolveCheckpoint (transforms.ts) already maps branch entries → message indices via `entryMessageYield` + a ctxEntries walk over `branchEntries` (filtered to context-producing types). That walk is the EXACT logic needed to map a set of entry ids → message indices. Extracting it into a shared pure helper avoids duplication and gives P1.M2.T1.S4 a clean seam. entryMessageYield returns 1 for message/custom_message/branch_summary and -1 for compaction/unknown (indeterminate).\n2. INPUT: messages: MessageLike[], branchEntries: BranchEntry[] (root→leaf, passed to filterPipeline), entryIds: Set<string> | string[]. All from transforms.ts scope.\n3. LOGIC: Add `mapEntryIdsToMessageIndices(messages, branchEntries, entryIds): number[]`. Build ctxEntries = branchEntries filtered to context-producing types (reuse isContextProducingType). Walk ctxEntries with a msgCursor (same as resolveCheckpoint step 4); for each entry whose id is in the entryIds set, compute its message-index range (msgCursor .. msgCursor+yield-1) and collect those indices; advance msgCursor by yield; if any entry yields <0 (compaction) OR msgCursor+yield > messages.length, return ONLY the indices collected so far for deterministically-mappable entries (skip the indeterminate one — never guess, never throw). Return ascending unique indices. REFACTOR resolveCheckpoint to use this helper for its target lookup where possible WITHOUT changing resolveCheckpoint's observable behavior (its existing tests in test/transforms.test.ts must stay green).\n4. OUTPUT: a pure, unit-tested mapEntryIdsToMessageIndices, consumed by P1.M2.T1.S4. Add focused unit tests (test/transforms.test.ts): map a known entry id → its message index; compaction entry present → that id skipped; unknown id → not in result; empty entryIds → [].",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M2.T1.S3",
+                  "type": "Subtask",
+                  "title": "Capture hideEntryIds at rewind creation (tools/rewind.ts resolvePreview)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (external_deps.md §7 + design_decisions.md BUG-002 \"Why pin by ENTRY id\") resolvePreview (tools/rewind.ts) already builds a flat message list via `ctx.sessionManager.buildContextEntries().flatMap(sessionEntryToContextMessages)`. To pin consistently with the FILTER (which resolves from branchEntries via getBranch), build the index→entryId map from the SAME source the filter uses. CRITICAL COHERENCE: the pin captured here MUST be resolvable by mapEntryIdsToMessageIndices (P1.M2.T1.S2) using the branchEntries that filter.ts passes to filterPipeline (ctx.sessionManager.getBranch().slice().reverse()). Therefore build the preview message list + index→entryId map from getBranch() via sessionEntryToContextMessages (NOT buildContextEntries) so preview and filter share one entry source.\n2. INPUT: ctx (ExtensionContext), the resolved `remove: number[]` index set (already computed in resolvePreview per granularity), P1.M2.T1.S1's hideEntryIds field on RewindMarkerInput.\n3. LOGIC: In resolvePreview, while building messages, ALSO build `indexToEntryId: string[]` (for each yielded message, push the source SessionEntry.id). After `remove` is resolved, compute `hideEntryIds = remove.map(i => indexToEntryId[i]).filter((id): id is string => typeof id === \"string\" && id.length > 0)`. Return it alongside {ledger, k}. In rewindExecute step 7 (payload construction), set `hideEntryIds` on the RewindMarkerInput ONLY when the array is non-empty (omit otherwise → live fallback). NEVER let capture failure block the rewind: wrap in try/catch; on any error, omit hideEntryIds (the rewind still proceeds with live resolution — E13/E8). If getBranch() is unavailable on a minimal mock (some unit-test fakes), omit hideEntryIds (keeps existing tool tests green).\n4. OUTPUT: new rewind markers carry hideEntryIds when the target is mappable; consumed by P1.M2.T1.S4. The existing resolvePreview callers (ledger/K) are unchanged. Add/extend test/tools/rewind.test.ts: a marker created against a fixture branch carries the expected entry ids on its persisted payload (assert via a spy on pi.appendEntry).",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M2.T1.S4",
+                  "type": "Subtask",
+                  "title": "Filter resolves against pinned hideEntryIds (transforms.ts filterPipeline)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T1.S1",
+                    "P1.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (design_decisions.md BUG-002) filterPipeline (transforms.ts) currently re-resolves each rewind LIVE each iteration. The fix: when a rewind marker carries a non-empty hideEntryIds, compute `remove` from mapEntryIdsToMessageIndices(messages, branchEntries, hideEntryIds) instead of the granularity-specific live resolver. This makes each rewind's target STABLE — a later rewind cannot retarget an earlier one. protectedOk still gates every remove (spec/06 §8). Compaction: if a pinned entry is absent from the current branch (compaction removed it), mapEntryIdsToMessageIndices skips it → the rewind no-ops for that entry (correct — compaction already hid it).\n2. INPUT: filterPipeline's existing args (messages, markers, config, branchEntries); RewindMarkerLike.hideEntryIds (P1.M2.T1.S1); mapEntryIdsToMessageIndices (P1.M2.T1.S2).\n3. LOGIC: In the rewinds loop, read `const pinned = readOwn(rw, \"hideEntryIds\")`; if it's a non-empty array of strings, `remove = mapEntryIdsToMessageIndices(m, Array.isArray(branchEntries)?branchEntries:[], pinned)`; ELSE fall back to the existing per-granularity live resolution (partitionIntoUnits/resolveLastToolCallGroup | resolveLastTurn | resolveCheckpoint). Keep the `if (!protectedOk(m, remove, config)) continue;` gate and the `m = applyRewind(m, remove)` exactly as-is. Pure + never throws (E13). NO change to the shrinks loop.\n4. OUTPUT: filterPipeline is pin-aware; backward compatible (markers without hideEntryIds behave exactly as before → the existing pipeline.test.ts composition cases stay green). Consumed by P1.M2.T1.S5 (regression test).",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M2.T1.S5",
+                  "type": "Subtask",
+                  "title": "Composition regression test — originally-hidden CONTENT stays hidden after a 2nd rewind",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S4"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (system_context.md + BUG-002 reproduction) the existing composition test (test/pipeline.test.ts ~line 252, \"two rewinds with DISTINCT excludeToolCallIds\") asserts ONLY role signatures and uses the spec §11 fixture where every group between rewinds is itself rewound — so it PASSES today despite the bug. The PRD's BUG-002 fixture has interspersed NON-rewound content (read→rewind→grep→rewind) where the originally-hidden read reappears. The fix's pin must keep it hidden.\n2. INPUT: filterPipeline + mapEntryIdsToMessageIndices (P1.M2.T1.S4); the test's existing helpers (user/asst/result/custom/mkRewind/mkShrink, expectNoOrphans).\n3. LOGIC: Add a test \"two stacked last_tool_call_group rewinds with pinned targets keep originally-hidden content hidden (BUG-002)\". Fixture messages (content-bearing, so absence is assertable): [user('u0'), asst(read:cRead), result(cRead,'BIG-READ-OUTPUT'), asst(rewind:cR1), result(cR1,'rewound'), custom('mulligan:note'), asst(grep:cGrep), result(cGrep,'GREP-OUTPUT'), asst(rewind:cR2), result(cR2,'rewound'), custom('mulligan:note')]. Markers (seq order): rewind#1 {seq:1, last_tool_call_group, hideEntryIds:[<entry id of the read toolGroup>]}, rewind#2 {seq:2, last_tool_call_group, hideEntryIds:[<entry id of the grep toolGroup>]}. Build branchEntries whose entry ids map to those toolGroups. Assert: JSON.stringify(out).includes('BIG-READ-OUTPUT') === false AND .includes('GREP-OUTPUT') === false (BOTH hidden), the two rewind assistant+result groups + both notes SURVIVE, and expectNoOrphans(out). Add a SECOND test asserting the SAME fixture WITHOUT hideEntryIds (legacy markers) still produces a valid (role-correct, orphan-free) output — documenting the live-fallback path.\n4. OUTPUT: a content-level regression guard that FAILS on the pre-fix code and PASSES after P1.M2.T1.S4. This is the success-criterion-#4 proof.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M2.T2",
+              "type": "Task",
+              "title": "Enforce latest:user protection (BUG-003)",
+              "status": "Planned",
+              "description": "protectedOk only enforces first:user; the latest:user selector is read from config but never acted on. For checkpoint granularity, resolveCheckpoint removes everything after the checkpoint target — which can include a user message that arrived after the checkpoint, crossing the latest:user boundary. Fix both layers (spec/06 §8 defense-in-depth): add the latest:user branch to protectedOk (filter), and extend the rewind tool's pre-persist guard to refuse a checkpoint rewind that would cross the latest user message.",
+              "subtasks": [
+                {
+                  "id": "P1.M2.T2.S1",
+                  "type": "Subtask",
+                  "title": "protectedOk — add latest:user branch + unit tests",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (transforms.ts protectedOk + spec/06 §8) protectedOk currently computes iFirstUser and checks min(remove) > iFirstUser. The latest:user selector is in config.rewind.protectedRoles (DEFAULT includes it) but never enforced. spec/06 §8: \"a rewind that would remove the latest user message ... is refused\". For last_turn default this is already protected by construction (resolveLastTurn only removes AFTER iLastUser, keeping iLastUser); the GAP is checkpoint (resolveCheckpoint removes everything after iTarget, which can be past a later user message).\n2. INPUT: protectedOk(messages, remove, config) signature unchanged; ProtectedConfig.rewind.protectedRoles.\n3. LOGIC: After the existing first:user block, add: if protectedRoles includes \"latest:user\", compute iLatestUser = index of the LAST role:\"user\" message; if iLatestUser !== -1 AND the remove set CONTAINS iLatestUser (any r === iLatestUser), return false (refuse). Fail-safe: malformed/missing config → enforce (mirror the first:user discipline: protectFirstUser defaults true; add protectLatestUser defaulting true when the roles array is absent/empty). NEVER throws. Empty/non-array remove → true (vacuous, unchanged).\n4. OUTPUT: protectedOk refuses when remove would drop the latest user message. Add unit tests in test/pipeline.test.ts (protectedOk describe block): (a) checkpoint-style remove containing iLatestUser → false; (b) remove NOT containing iLatestUser → true; (c) config omitting latest:user → not enforced (true); (d) only one user message (iFirstUser===iLatestUser) and remove contains it → false (both selectors agree). Verify existing first:user tests stay green.",
+                  "prd_selectors": []
+                },
+                {
+                  "id": "P1.M2.T2.S2",
+                  "type": "Subtask",
+                  "title": "rewind tool — checkpoint pre-persist guard refusing latest:user crossing + tests",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (tools/rewind.ts step-5b + design_decisions.md BUG-003) the existing step-5b guard refuses ONLY `last_turn && to_previous_prompt === true && k === 0` (nuclear across the first user message). checkpoint has NO equivalent guard. spec/06 §8 mandates the TOOL refuses before persisting (so no stray marker/note), with the filter double-checking via protectedOk (now added in P1.M2.T2.S1).\n2. INPUT: rewindExecute's resolved `remove`/`k` from resolvePreview (already available at step 5); the messages snapshot; config.rewind.protectedRoles.\n3. LOGIC: After step-5b, add a checkpoint-scoped protected check: if granularity === \"checkpoint\" AND protectedRoles includes \"latest:user\", compute iLatestUser on the resolvePreview message snapshot; if iLatestUser !== -1 AND remove includes iLatestUser, return refusal(\"would cross a protected message (checkpoint rewind would remove the latest user message — the current ask)\", \"checkpoint\") BEFORE renderNote/persist. Mirror step-5b's shape (refuse + return, persist nothing). For last_turn default this is already construction-safe; do NOT add a redundant guard there.\n4. OUTPUT: a checkpoint rewind that would hide the latest user message refuses at the tool and persists zero markers. Add test/tools/rewind.test.ts: fixture where a checkpoint's targetId precedes a LATER user message; assert the tool returns a \"refused\" text, pi.appendEntry is NOT called for a rewind marker, and pi.sendMessage (the note) is NOT called.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M3",
+          "type": "Milestone",
+          "title": "Branch scoping, persist integrity & audit polish (BUG-004 + BUG-005 + BUG-008)",
+          "status": "Planned",
+          "description": "Three independent minor/cosmetic fixes. BUG-004: marker/label reads use getEntries() (every branch) instead of getBranch() (current branch), so /tree navigation leaks sibling-branch markers. BUG-005: the rewind tool reports success even when appendRewindMarker failed to persist (null not checked). BUG-008: the audit Suggestion line hard-codes 'result'/'mulligan_shrink' even when the largest carrier is a user or assistant message. All three are small, isolated, and independently testable.",
+          "tasks": [
+            {
+              "id": "P1.M3.T1",
+              "type": "Task",
+              "title": "Scope marker/label reads to the current branch (BUG-004)",
+              "status": "Planned",
+              "description": "Switch getEntries() → getBranch() in the four marker/label reads: filter.ts readMarkers, tools/rewind.ts countRewindMarkers + checkpointExists, and the listCheckpoints call site in tools/audit.ts. getBranch() returns the current branch only; all four consumers are order-insensitive (bucketing/counting/latest-wins-via-getLabel candidate discovery), so no reordering is needed.",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T1.S1",
+                  "type": "Subtask",
+                  "title": "Switch getEntries→getBranch in 4 sites + branch-isolation test",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (external_deps.md §5 + design_decisions.md BUG-004) getEntries() returns EVERY branch; getBranch() returns the current branch root→leaf and is already used by contextHandler + resolveCheckpoint. The four leak sites: filter.ts readMarkers (~line 106), tools/rewind.ts countRewindMarkers (~207) + checkpointExists (~244), tools/audit.ts listCheckpoints CALL SITE (~563 — listCheckpoints itself is a pure fn taking entries[], so only its caller changes). All four are order-insensitive: readMarkers buckets by customType/kind; countRewindMarkers counts; checkpointExists discovers candidate targetIds then asks getLabel(id) for latest-wins; listCheckpoints builds its own latest-wins labelMap.\n2. INPUT: ctx.sessionManager.getBranch() (returns BranchEntry[]/SessionEntry[] root→leaf).\n3. LOGIC: In each of the four sites replace `ctx.sessionManager.getEntries()` with `ctx.sessionManager.getBranch()`. Keep the existing try/catch + defensive Array.isArray guards unchanged. For readMarkers, the bucketing loop is identical over either source. Do NOT change getBranch().slice().reverse() usages elsewhere (they are correct as-is).\n4. OUTPUT: markers/labels from sibling branches no longer apply/count after /tree navigation. Add a test (test/filter.test.ts or a focused unit) with a mock sessionManager whose getBranch() returns ONLY branch-B entries while getEntries() returns A+B; assert readMarkers returns only branch-B rewinds/shrinks, and (for rewind) countRewindMarkers counts only branch-B markers. Verify the 635-test suite stays green (existing tests that mock getEntries may need their mock to ALSO provide getBranch returning the same array — update mocks minimally).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M3.T2",
+              "type": "Task",
+              "title": "Null-check the marker persist result (BUG-005)",
+              "status": "Planned",
+              "description": "appendRewindMarker returns null when pi.appendEntry throws or getLeafId() returns null, but rewindExecute does not check — it proceeds to leaveNote and returns the success text. Add a null-check that returns a refusal and skips the note, so the agent is never told a rewind succeeded when nothing will be hidden.",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T2.S1",
+                  "type": "Subtask",
+                  "title": "Add null-check refusal before leaveNote + test",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (tools/rewind.ts execute step 7 + markers.ts appendRewindMarker) step 7 is `const markerId = appendRewindMarker(pi, ctx, payload); leaveNote(pi, { content: rendered, rewindId: markerId ?? toolCallId });` — no null gate. appendRewindMarker returns string|null (null on appendEntry throw or null getLeafId). The shared refusal() helper prefixes \"Mulligan: refused — \".\n2. INPUT: markerId (string|null) from appendRewindMarker; the existing refusal() helper.\n3. LOGIC: Immediately after `const markerId = appendRewindMarker(pi, ctx, payload);`, add `if (markerId === null) return refusal(\"failed to persist the rewind marker (nothing will be hidden); no changes were made\", granularity);`. This MUST come BEFORE leaveNote so no stray note is sent for a failed rewind. details.markerId stays absent (it is only set on the success path). Keep the existing success path (leaveNote + successText) unchanged for the non-null case.\n4. OUTPUT: a failed persist yields a refusal text and sends NO note. Add test/tools/rewind.test.ts: inject a fake pi whose appendEntry throws (and a second case whose sessionManager.getLeafId() returns null); assert the tool returns content text starting with \"Mulligan: refused —\", AND pi.sendMessage (the note) was NOT called, AND pi.appendEntry was attempted exactly once.",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M3.T3",
+              "type": "Task",
+              "title": "Audit Suggestion line — role-aware (BUG-008)",
+              "status": "Planned",
+              "description": "renderAuditReport always emits 'the `<rows[0].label>` result is the largest contributor. Consider mulligan_shrink.' even when rows[0] is a user message or an assistant message. Make the Suggestion honest per the largest carrier's role (shrink is meaningful for toolResult; rewind/shrink for assistant; nothing actionable for a user paste).",
+              "subtasks": [
+                {
+                  "id": "P1.M3.T3.S1",
+                  "type": "Subtask",
+                  "title": "Role-aware Suggestion line + per-role tests",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (tools/audit.ts renderAuditReport + design_decisions.md BUG-008) the Suggestion block hard-codes `the \\`${rows[0].label}\\` result is the largest contributor. Consider mulligan_shrink.` spec/05 §4's example only shows this line for a toolResult. describeMessage labels: toolResult → `${toolName} ${args}`; assistant → summarizeAssistantContent e.g. \"(thinking + toolCall x2)\"; user → `user \"<snippet>\"`. The line reads awkwardly for non-toolResult carriers. The empty-filtered-view branch already OMITS the Suggestion (unchanged).\n2. INPUT: renderAuditReport's `rows: AuditRow[]` (each has .role + .label) and the filtered[] guard.\n3. LOGIC: When rows.length > 0, branch on rows[0].role: (a) role===\"toolResult\" → unchanged text `Suggestion: the \\`${label}\\` result is the largest contributor. Consider mulligan_shrink.`; (b) role===\"assistant\" → `Suggestion: the assistant turn \\`${label}\\` is the largest contributor. Consider mulligan_rewind (last_tool_call_group) or mulligan_shrink.`; (c) otherwise (user/custom/unknown) → `Suggestion: the largest contributor is the \\`${label}\\` message (role: \\`${role}\\`); no Mulligan operation applies to a non-tool message.`. Keep the trailing newline behavior identical. NEVER throws.\n4. OUTPUT: the Suggestion is honest per role. Add test/tools/audit.test.ts cases: rows[0].role = toolResult/assistant/user each render the matching Suggestion substring; the empty-filtered-view case still omits the Suggestion. DOCS: if README §6 quotes the Suggestion format, sync it in P1.M5.T1 (Mode B).",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M4",
+          "type": "Milestone",
+          "title": "Integration smoke determinism (BUG-007)",
+          "status": "Planned",
+          "description": "The deterministic smoke suite passes 9/9 but four spec/10 §2.1 scenarios have SOFT/model-driven-only headline assertions (F-rewind-core seed-hiding, F-checkpoint K/seed-hiding, F-shrink-preventive bloatHit, F-nudge-drift hasNudge), and scenarios.md documents F-retrycap/F-abortfraction which reference unimplemented config knobs. This milestone adds deterministic coverage now achievable thanks to M1 (real config reading) and M2 (pinned targets), and marks the out-of-scope scenarios. MUST run after M1 and M2 land.",
+          "tasks": [
+            {
+              "id": "P1.M4.T1",
+              "type": "Task",
+              "title": "Deterministic bloatHit proof (F-shrink-preventive)",
+              "status": "Planned",
+              "description": "bloatReminderHandler skips every tool whose name starts with mulligan_ (src/nudges.ts line 190), so the existing mulligan_smoke_big can NEVER fire the reminder. Register a NON-mulligan_* test tool whose result exceeds the resolved per-tool bloat threshold, drive a tool_result through it, and assert bloatHit:true in the turn-metric. Independent of M1/M2 (purely a harness/tool-registration gap).",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T1.S1",
+                  "type": "Subtask",
+                  "title": "Register a non-mulligan big-result test tool + bloatHit assertion",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (smoke.ts + nudges.ts:190 + scenarios.md F-shrink-preventive) bloatReminderHandler does `if (tn.startsWith(\"mulligan_\")) return;` — so mulligan_smoke_big is always skipped. A genuine bloatHit:true needs a NON-mulligan_* tool whose result exceeds its resolved threshold. Defaults (config.ts): global nudges.bloatThresholdBytes=8192. (smoke.ts notes per-tool read=24576 / bash=16384 but those are NOT in v1 DEFAULT_CONFIG — verify against config.ts; if absent, the single global 8192 threshold applies to all non-mulligan tools.) The smoke harness drives scenarios via /mulligan_smoke + a second -p prompt.\n2. INPUT: smoke.ts factory (registers tools + the /mulligan_smoke command); run-smoke.mjs (orchestrator + assertions).\n3. LOGIC: In smoke.ts register a new tool (name WITHOUT the mulligan_ prefix, e.g. \"smoke_read_big\") that returns a result > the global bloatThresholdBytes (pad to e.g. 10KB). Add an F-shrink-preventive recipe in driveScenario that triggers this tool's result through a real tool_result event (via a model prompt or by invoking the tool through pi so the tool_result handler fires), then assert on the observing context.fire / turn-metric that bloatHit:true was recorded. Coordinate with run-smoke.mjs to convert the logged bloatHit into a HARD assertion (not SOFT). Keep mulligan_smoke_big for the shrink-target canary (unchanged).\n4. OUTPUT: F-shrink-preventive now has a deterministic bloatHit:true proof. Update scenarios.md F-shrink-preventive note from \"unprovable in this harness\" to the new deterministic path (DOCS: Mode A — scenarios.md is the doc this subtask touches).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M4.T2",
+              "type": "Task",
+              "title": "Deterministic hasNudge proof (F-nudge-drift)",
+              "status": "Planned",
+              "description": "The drift nudge needs a turn that grows > driftThresholdTokens AND a baseline from a prior turn. Today this is SOFT because setConfig from the smoke helper doesn't affect Mulligan's config instance (jiti double-module). Now that M1 wires Mulligan to read its OWN .pi/settings.json, lower driftThresholdTokens via the project-local settings and drive a controlled two-turn drift so shouldNudge fires deterministically.",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T2.S1",
+                  "type": "Subtask",
+                  "title": "Config-driven low drift threshold + two-turn drift harness + hasNudge assertion",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (smoke.ts F-nudge-drift + design_decisions.md BUG-007) the nudge fires when metric.deltaTokens > config.nudges.driftThresholdTokens AND a baseline exists (turn_end handler in nudges.ts). Today lowering the threshold via setConfig in the smoke helper does NOT work (jiti gives smoke a separate config.ts instance). After M1, Mulligan reads <cwd>/.pi/settings.json at its OWN session_start — so a project-local settings file with a tiny driftThresholdTokens IS honored by Mulligan. shouldNudge + injectNudge + suppressCheck live in nudges.ts; the nudge is an EPHEMERAL mulligan:nudge custom message (never persisted — the §2.3 invariant).\n2. INPUT: the M1 config wiring (P1.M1.T2.S1); nudges.ts shouldNudge/injectNudge; smoke.ts context handler (logs hasNudge).\n3. LOGIC: For the F-nudge-drift scenario, write a project-local .pi/settings.json (scoped to the smoke run, e.g. a dedicated tmp cwd or an env-gated settings) with mulligan.nudges.driftThresholdTokens = 1 (trivially crossed). Drive a two-turn harness: turn 1 establishes the baseline (turn_end records a turn-metric), turn 2 grows past the tiny threshold → the next context.fire has hasNudge:true. Coordinate run-smoke.mjs to assert hasNudge:true on the post-turn-2 fire AND still ZERO mulligan:nudge entries in the session JSONL (the §2.3 invariant). Restore/remove the scoped settings after the run (afterEach / orchestrator cleanup) so other scenarios use defaults.\n4. OUTPUT: F-nudge-drift hasNudge is now deterministic. Update scenarios.md F-nudge-drift note from \"model-driven — SOFT\" to the deterministic path (DOCS: Mode A).",
+                  "prd_selectors": []
+                }
+              ]
+            },
+            {
+              "id": "P1.M4.T3",
+              "type": "Task",
+              "title": "Hard seed-hiding assertions + mark out-of-scope scenarios",
+              "status": "Planned",
+              "description": "Now that M2 pins rewind targets, the F-rewind-core and F-checkpoint seed-hiding assertions (currently logged pass/fail but NOT gating) become deterministic — convert them to HARD run-smoke.mjs assertions. Also mark F-retrycap and F-abortfraction OUT-OF-SCOPE in scenarios.md: they reference config knobs (rewind.maxRetriesPerPrompt, rewind.abortContextFraction) that v1 config.ts does not implement.",
+              "subtasks": [
+                {
+                  "id": "P1.M4.T3.S1",
+                  "type": "Subtask",
+                  "title": "Convert F-rewind-core/F-checkpoint hiding to HARD + mark F-retrycap/F-abortfraction OOS",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S4"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (smoke.ts context handler + run-smoke.mjs + scenarios.md) the context handler already logs F-rewind-core.hiding / F-checkpoint.hiding as pass/fail (seedHiddenInAssistant / seedAnchorInAssistant), but run-smoke.mjs treats them as informational (GOTCHA #7: logging alone does not fail a scenario). With M2's pinned targets, the seed reply is stably hidden → the pass/fail signal is now deterministic. F-retrycap (rewind.maxRetriesPerPrompt) and F-abortfraction (rewind.abortContextFraction) are documented but their knobs are NOT in config.ts DEFAULT_CONFIG or validateConfig — they are not v1 features.\n2. INPUT: run-smoke.mjs asserter functions (assertRewindCore/assertCheckpoint); the M2 pin (P1.M2.T1.S4); scenarios.md.\n3. LOGIC: (a) In run-smoke.mjs, make the F-rewind-core.hiding and F-checkpoint.hiding log lines GATING — a \"fail\" status fails the scenario (exit 1), a \"pass\" passes. Keep the two-signal guard (tool.rewind K-text proves the seed existed+was pinned; seed-absence proves it is hidden). (b) In scenarios.md, add an explicit OUT-OF-SCOPE banner to F-retrycap and F-abortfraction: \"v1 does not implement rewind.maxRetriesPerPrompt / rewind.abortContextFraction (not in config.ts); this scenario is documented for future versions and is not run by npm run smoke.\" Do not delete the scenario text (preserve the design rationale).\n4. OUTPUT: F-rewind-core and F-checkpoint hiding are deterministic CI gates; the two unimplemented-knob scenarios are clearly out-of-scope. DOCS: scenarios.md updated (Mode A — this subtask directly edits it).",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P1.M5",
+          "type": "Milestone",
+          "title": "Changeset-level documentation sync (Mode B)",
+          "status": "Planned",
+          "description": "Cross-cutting documentation that only makes sense once the whole changeset lands: README §3 (config accuracy — the 'Disabling' and 're-read on /reload' claims are now true), README §6 (audit Suggestion format if quoted), and a short architecture/BUG-fix summary. Per SOW §5, whole-feature/overview docs are a FINAL Mode B task depending on all implementing subtasks.",
+          "tasks": [
+            {
+              "id": "P1.M5.T1",
+              "type": "Task",
+              "title": "Sync README + changeset summary",
+              "status": "Planned",
+              "description": "Verify and update README.md so every claim matches the post-fix behavior: §3 config loading/reload/disabling (now true via M1), the audit Suggestion format if §6 quotes it (now role-aware via M3.T3). Add a concise BUG-fix changelog entry. No code changes.",
+              "subtasks": [
+                {
+                  "id": "P1.M5.T1.S1",
+                  "type": "Subtask",
+                  "title": "README accuracy pass + BUG-fix summary",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S2",
+                    "P1.M2.T1.S5",
+                    "P1.M2.T2.S2",
+                    "P1.M3.T1.S1",
+                    "P1.M3.T2.S1",
+                    "P1.M3.T3.S1",
+                    "P1.M4.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: README.md §3 Configuration describes loading/reload/disabling; §4–§6 describe tools/audit. Before this changeset several claims were false (BUG-001/006/008). After M1–M4 they are true. This is the cohesive Mode B doc pass (per-file config-knob docs were Mode A in their subtasks; this is the whole-feature accuracy pass).\n2. INPUT: the landed code from all dependencies (M1 wiring, M2 pinning+protection, M3 scoping+integrity+audit, M4 smoke).\n3. LOGIC: Read README.md end-to-end. §3: confirm \"loaded lazily... re-read on /reload\" and the Disabling claim (\"enabled:false → all four tools refuse cleanly with 'Mulligan: refused — Mulligan is disabled.'\") now match behavior (they do, post-M1; cross-check against the P1.M1.T2.S2 integration test). Add a one-line note that project-local settings require a trusted project (isProjectTrusted). §6 (if it quotes the audit Suggestion): update to reflect the role-aware wording from P1.M3.T3.S1. Add/append a short \"Bug fixes\" or changelog section listing the 8 BUG IDs fixed (one line each, mapping BUG-00x → the fix). Do NOT invent new features or knobs. Keep tone consistent with the existing README.\n4. OUTPUT: README.md matches the shipped behavior; a reader can trust every config/audit claim. This is the final gate before declaring P1 Complete.",
+                  "prd_selectors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
