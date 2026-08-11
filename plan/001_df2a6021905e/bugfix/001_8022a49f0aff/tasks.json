@@ -139,21 +139,21 @@
           "id": "P1.M3",
           "type": "Milestone",
           "title": "Audit / reminder threshold consistency (BUG-005)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "COSMETIC off-by-one: the bloat-reminder nudge fires at bytes >= threshold (inclusive) while the audit bloaty flag uses strict > (exclusive). At exactly 8192 bytes the reminder fires but the audit row is unflagged, breaking the feedback loop. Fully isolated to audit.ts + nudges.ts — may be done in parallel with the entire M1/M2 chain.",
           "tasks": [
             {
               "id": "P1.M3.T1",
               "type": "Task",
               "title": "BUG-005 — align the audit bloaty flag to >= threshold (match the nudge)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Align the audit bloaty operator to >= so it matches the nudge's >= at exactly the threshold. The nudge is the user-facing bloat trigger; an agent that runs mulligan_audit after a bloat reminder must see the flagged row.",
               "subtasks": [
                 {
                   "id": "P1.M3.T1.S1",
                   "type": "Subtask",
                   "title": "audit.ts bloaty uses >= threshold; flip audit.test.ts:295; add matched nudge boundary test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See architecture/bugfix_round2_findings.md §1 BUG-005 + §4 (audit.test.ts:295 currently ASSERTS bloaty===false at exactly 8192 bytes and MUST flip). nudges.ts bloatReminderHandler fires when `bytes < config.nudges.bloatThresholdBytes` is FALSE (i.e. bytes >= threshold). audit.ts renderAuditReport row sets `bloaty: messageBytes(msg) > threshold` (strict). The nudge is the source of truth for 'is this bloated'; align audit to it.\n2. INPUT: src/tools/audit.ts — the rows mapping in auditExecute: `bloaty: messageBytes(msg) > threshold` (threshold === config.nudges.bloatThresholdBytes). src/nudges.ts bloatReminderHandler — UNCHANGED (already correct: >= via `if (bytes < threshold) return;`).\n3. LOGIC: In src/tools/audit.ts auditExecute, change the row's bloaty computation from `messageBytes(msg) > threshold` to `messageBytes(msg) >= threshold`. Update the AuditRow.bloaty JSDoc comment ('>= config.nudges.bloatThresholdBytes'). Do NOT change messageBytes, renderAuditReport formatting, the thresholdBytes field, or nudges.ts. MOCKING: none — audit.test.ts uses a fakeCtx with rt.lastFiltered; nudges.test.ts calls bloatReminderHandler directly with a synthetic event.\n4. OUTPUT: A result whose content is exactly config.nudges.bloatThresholdBytes (8192) bytes is flagged bloaty===true by mulligan_audit AND triggers the bloat reminder — the feedback loop is consistent. Results of 8191 bytes are still unflagged; 8193 still flagged. DOCS: update the AuditRow.bloaty JSDoc (Mode A). Update test/tools/audit.test.ts:295 — rename to 'exactly at threshold (8192 bytes) → flagged (>= threshold)' and flip the assertion to bloaty===true / text contains '⚠ above bloat threshold'. Add a matched boundary test in test/nudges.test.ts: a tool_result whose content is exactly bloatThresholdBytes → bloatReminderHandler returns a content block (fires) — locking the shared >= semantics on both sides.",
