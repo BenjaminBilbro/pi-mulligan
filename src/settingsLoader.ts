@@ -1,30 +1,30 @@
 /**
- * Pure, Pi-free settings loader — reads Mulligan config from Pi's settings.json files on disk.
+ * Settings loader — reads Mulligan's `mulligan` config from Pi's settings.json files.
  *
- * Honors spec/09 §1: reads the global ~/.pi/agent/settings.json unconditionally,
- * and the project-local <cwd>/.pi/settings.json ONLY when opts.isTrusted === true.
- * Extracts the `mulligan` own-key from each file; applies project-local-over-global
- * TOP-LEVEL REPLACE precedence (NOT deep-merge — spec/09 §1 "project-local wins").
+ * Pure, Pi-free leaf module: imports ONLY node: builtins (fs / path / os).
+ * No config.ts, no log.ts import — fully
+ * unit-testable with tmp-dir fixtures.
  *
- * This module imports ONLY node: builtins (fs/path/os) — NO pi, NO config, NO log —
- * so it is fully unit-testable with tmp-dir fixtures.
+ * Precedence: project-local REPLACES global at the `mulligan` key (top-level
+ * replace, NOT deep-merge). validateConfig() in config.ts fills sub-key defaults.
  *
- * Architecture: design_decisions.md BUG-001+BUG-006 section.
- * File locations: external_deps.md §2.
- * No settings accessor on Pi's ExtensionAPI: external_deps.md §1.
+ * Source: spec/09-configuration.md §1, architecture/external_deps.md §1-§2,
+ * architecture/design_decisions.md BUG-001.
  */
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-/**
- * Options for loadMulliganSettings.
- * - cwd: project working directory for the local .pi/settings.json read.
- * - isTrusted: must be strictly `true` to read the local file (fail-safe for untrusted projects).
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Public types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Options accepted by loadMulliganSettings. */
 export type LoadMulliganSettingsOptions = {
+  /** Project working directory for local .pi/settings.json. */
   cwd?: string;
+  /** Only read the local file when strictly true (fail-safe for untrusted projects). */
   isTrusted?: boolean;
 };
 
@@ -32,16 +32,14 @@ export type LoadMulliganSettingsOptions = {
 // Private helpers (module-local; not exported)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** True for plain records and Object.create(null); false for null, primitives, and arrays. */
+/** True for plain records and Object.create(null); false for null, primitives, and arrays.
+ *  Mirrors config.ts:isRecord. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/**
- * Extract the `mulligan` own-key from a parsed JSON value.
- * Returns the value (including null/0/false) when present via hasOwnProperty;
- * returns undefined when absent or when obj is not a record.
- */
+/** Return obj.mulligan when it exists as an own property (incl. null/0/false),
+ *  or undefined when absent / obj is not a record. */
 function mulliganValueIfPresent(obj: unknown): unknown {
   if (isRecord(obj) && Object.prototype.hasOwnProperty.call(obj, "mulligan")) {
     return obj.mulligan;
@@ -49,11 +47,8 @@ function mulliganValueIfPresent(obj: unknown): unknown {
   return undefined;
 }
 
-/**
- * Fail-safe warn for malformed/unreadable settings files.
- * Wrapped in try/catch so logging itself never throws (mirrors config.ts:warnConfig
- * and log.ts:writeStderrFallback).
- */
+/** Emit a console.warn for an unreadable settings file. Wrapped in try/catch
+ *  so the warn itself never throws (mirrors config.ts:warnConfig / log.ts:writeStderrFallback). */
 function warnUnreadable(filePath: string, err: unknown): void {
   try {
     const msg = err instanceof Error ? err.message : String(err);
@@ -63,23 +58,24 @@ function warnUnreadable(filePath: string, err: unknown): void {
   }
 }
 
-/**
- * Read a settings file and extract its `mulligan` key.
- * Catches ENOENT/EACCES/EISDIR (missing/unreadable) and JSON SyntaxError (malformed, incl. JSONC comments)
- * uniformly — warns on malformed/IO errors, silently skips missing files, and never throws.
- */
+/** Check whether an error is a "file not found" class error (ENOENT).
+ *  Node fs errors have a .code property; ENOENT means the file simply doesn't exist. */
+function isNotFound(err: unknown): boolean {
+  return (err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT");
+}
+
+/** Read and parse a settings.json file, returning the `mulligan` own-key value
+ *  if present, or undefined. Missing file (ENOENT) → silently skip.
+ *  Malformed JSON (SyntaxError) or other fs errors → warn + skip. */
 function readMulliganKey(filePath: string): unknown {
   try {
     const txt = readFileSync(filePath, "utf8");
     const obj = JSON.parse(txt);
     return mulliganValueIfPresent(obj);
   } catch (e) {
-    // ENOENT (missing file) → silently skip (no warn — file simply doesn't exist).
-    // All other errors (malformed JSON, EACCES, EISDIR, etc.) → warn + skip.
-    if (e instanceof Error && "code" in e && (e as NodeJS.ErrnoException).code === "ENOENT") {
-      return undefined;
+    if (!isNotFound(e)) {
+      warnUnreadable(filePath, e);
     }
-    warnUnreadable(filePath, e);
     return undefined;
   }
 }
@@ -89,23 +85,28 @@ function readMulliganKey(filePath: string): unknown {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * loadMulliganSettings — read the `mulligan` config from Pi's settings files on disk.
+ * loadMulliganSettings — read the `mulligan` config from Pi's settings files.
  *
- * 1. Reads the global ~/.pi/agent/settings.json unconditionally.
- * 2. When opts.isTrusted === true AND opts.cwd is a string, reads the local <cwd>/.pi/settings.json.
- * 3. If the local file has a `mulligan` own-key (any value incl. null), it REPLACES the global value
- *    entirely (top-level replace, NOT deep-merge — spec/09 §1).
- * 4. Returns the merged `mulligan` value, or `undefined` when neither file contributes a mulligan key.
- *
- * Never throws. No caching. No validation (config.ts:validateConfig handles that).
+ * 1. GLOBAL: ~/.pi/agent/settings.json — always read (user's own home is trusted).
+ * 2. LOCAL:  <cwd>/.pi/settings.json — read ONLY when opts.isTrusted === true.
+ * 3. MERGE:  if the local file contributes a `mulligan` key (any value, incl. null),
+ *            it REPLACES the global `mulligan` entirely (top-level replace, NOT deep-merge).
+ *            Otherwise the global `mulligan` (if any) is used.
+ * 4. Return the merged `mulligan` value (unknown), or undefined when neither file
+ *    has a `mulligan` key. Non-object `.mulligan` values are returned as-is for
+ *    config.ts:validateConfig to coerce.
+ * 5. NEVER throws (missing/unreadable → silent skip; malformed → warn + skip).
+ * 6. No caching — the caller (factory / session_start) decides when to re-read.
  */
 export function loadMulliganSettings(opts?: LoadMulliganSettingsOptions): unknown {
   const globalMulligan = readMulliganKey(join(homedir(), ".pi", "agent", "settings.json"));
 
+  // Local file is only read when the caller explicitly trusts the project (strict === true).
+  // If cwd is missing despite isTrusted===true, skip local (fail-safe — no ENOENT from join).
   if (opts?.isTrusted === true && typeof opts?.cwd === "string") {
     const localMulligan = readMulliganKey(join(opts.cwd, ".pi", "settings.json"));
     if (localMulligan !== undefined) {
-      return localMulligan;
+      return localMulligan; // local REPLACES global (top-level replace)
     }
   }
 

@@ -1,16 +1,25 @@
+/**
+ * Unit tests for src/settingsLoader.ts — tmp-dir fixtures + vi.mock('node:os').
+ *
+ * Fixture pattern mirrors test/log.test.ts (mkdtempSync/rmSync/writeFileSync).
+ * console.warn spy pattern mirrors test/config.test.ts.
+ */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir, homedir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadMulliganSettings } from "../src/settingsLoader.js";
+import { homedir } from "node:os";
+import {
+  loadMulliganSettings,
+  type LoadMulliganSettingsOptions,
+} from "../src/settingsLoader.js";
 import { DEFAULT_CONFIG, validateConfig } from "../src/config.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mock node:os.homedir so it points at a tmp dir (avoids reading the real home).
-// vitest hoists vi.mock; the module-under-test picks up the redirected homedir.
-// We use importOriginal to keep tmpdir (and other exports) intact.
+// vi.mock('node:os') — redirect homedir() to a mutable tmp dir per test
 // ─────────────────────────────────────────────────────────────────────────────
-const originalHomedir = homedir;
+
+let mockHome: string;
 
 vi.mock("node:os", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:os")>();
@@ -20,23 +29,17 @@ vi.mock("node:os", async (importOriginal) => {
   };
 });
 
-let mockHome: string = "/nonexistent-initial";
-
-/** Point the mocked homedir at a new path. */
-function setHome(dir: string): void {
-  mockHome = dir;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Fixtures — mirror test/log.test.ts (mkdtempSync / rmSync pattern)
+// Fixtures
 // ─────────────────────────────────────────────────────────────────────────────
+
 let home: string;
 let cwd: string;
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "mulligan-sl-home-"));
   cwd = mkdtempSync(join(tmpdir(), "mulligan-sl-cwd-"));
-  setHome(home);
+  mockHome = home;
 });
 
 afterEach(() => {
@@ -44,17 +47,12 @@ afterEach(() => {
   rmSync(cwd, { recursive: true, force: true });
 });
 
-/**
- * Write a JSON file inside a tmp dir, creating parent directories as needed.
- * relPath is relative to dir, e.g. ".pi/agent/settings.json".
- */
-function writeSettings(dir: string, relPath: string, data: unknown): void {
-  const filePath = join(dir, relPath);
-  const parentDir = filePath.substring(0, filePath.lastIndexOf("/"));
-  if (parentDir) {
-    mkdirSync(parentDir, { recursive: true });
-  }
-  writeFileSync(filePath, typeof data === "string" ? data : JSON.stringify(data), "utf8");
+/** Write a JSON file at <dir>/<relPath>, creating parent dirs as needed. */
+function writeSettings(dir: string, relPath: string, objOrJson: unknown): void {
+  const full = join(dir, relPath);
+  mkdirSync(join(full, ".."), { recursive: true });
+  const content = typeof objOrJson === "string" ? objOrJson : JSON.stringify(objOrJson);
+  writeFileSync(full, content, "utf8");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,137 +60,174 @@ function writeSettings(dir: string, relPath: string, data: unknown): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("loadMulliganSettings", () => {
-  it("returns undefined when no settings files exist anywhere", () => {
+  // 1. No files anywhere → undefined
+  it("returns undefined when no settings files exist", () => {
     expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
   });
 
-  it("reads global-only mulligan value", () => {
+  // 2. Global-only
+  it("reads global mulligan when only global file exists", () => {
     writeSettings(home, ".pi/agent/settings.json", { mulligan: { enabled: false } });
     expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ enabled: false });
   });
 
-  it("reads local-only mulligan value when trusted", () => {
+  // 3. Local-only (trusted)
+  it("reads local mulligan when only local file exists and trusted", () => {
     writeSettings(cwd, ".pi/settings.json", { mulligan: { maxDepth: 9 } });
     expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ maxDepth: 9 });
   });
 
-  it("LOCAL REPLACES GLOBAL — top-level replace, NOT deep-merge", () => {
+  // 4. BOTH → LOCAL REPLACES GLOBAL (top-level replace, NOT deep-merge)
+  it("local mulligan replaces global mulligan (top-level replace, not deep-merge)", () => {
     writeSettings(home, ".pi/agent/settings.json", { mulligan: { a: 1 } });
     writeSettings(cwd, ".pi/settings.json", { mulligan: { b: 2 } });
-    expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ b: 2 });
+    const result = loadMulliganSettings({ cwd, isTrusted: true });
+    expect(result).toEqual({ b: 2 }); // NOT { a: 1, b: 2 }
   });
 
-  it("local mulligan:null wins over global (null is a present key)", () => {
+  // 5. Untrusted — isTrusted:false AND undefined → local never read
+  it("skips local file when isTrusted is false", () => {
+    writeSettings(home, ".pi/agent/settings.json", { mulligan: { global: true } });
+    writeSettings(cwd, ".pi/settings.json", { mulligan: { local: true } });
+    expect(loadMulliganSettings({ cwd, isTrusted: false })).toEqual({ global: true });
+  });
+
+  it("skips local file when isTrusted is undefined", () => {
+    writeSettings(home, ".pi/agent/settings.json", { mulligan: { global: true } });
+    writeSettings(cwd, ".pi/settings.json", { mulligan: { local: true } });
+    expect(loadMulliganSettings({ cwd })).toEqual({ global: true });
+  });
+
+  // 6. Local mulligan:null wins over global
+  it("local mulligan:null replaces global and validateConfig(null) yields DEFAULT_CONFIG", () => {
     writeSettings(home, ".pi/agent/settings.json", { mulligan: { x: 1 } });
     writeSettings(cwd, ".pi/settings.json", { mulligan: null });
-    expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeNull();
+    const result = loadMulliganSettings({ cwd, isTrusted: true });
+    expect(result).toBeNull();
+    // Consumer contract: validateConfig(null) → DEFAULT_CONFIG (non-record raw)
+    expect(validateConfig(null)).toEqual(DEFAULT_CONFIG);
   });
 
-  it("isTrusted:false — local file is never read, global returned", () => {
+  // 7. Missing file → no throw, no warn
+  it("returns undefined when HOME has no .pi dir, no throw, no warn", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // home dir exists but has no .pi subdirectory
+      expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
+      expect(warn).not.toHaveBeenCalled(); // ENOENT is silently skipped (no warn for missing)
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  // 8. Malformed JSON in global → warn + skip
+  it("emits console.warn for malformed global JSON and falls through", () => {
+    writeSettings(home, ".pi/agent/settings.json", "{ not json");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const result = loadMulliganSettings({ cwd, isTrusted: true });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain("[mulligan] settings:");
+      expect(warn.mock.calls[0][0]).toContain("unreadable:");
+      expect(result).toBeUndefined();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  // 9. Malformed JSON in local (trusted, global valid) → returns global, warn for local
+  it("emits console.warn for malformed local JSON and returns global", () => {
     writeSettings(home, ".pi/agent/settings.json", { mulligan: { enabled: true } });
-    writeSettings(cwd, ".pi/settings.json", { mulligan: { enabled: false } });
-    expect(loadMulliganSettings({ cwd, isTrusted: false })).toEqual({ enabled: true });
+    writeSettings(cwd, ".pi/settings.json", "{ malformed");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const result = loadMulliganSettings({ cwd, isTrusted: true });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain("[mulligan] settings:");
+      expect(warn.mock.calls[0][0]).toContain(join(cwd, ".pi", "settings.json"));
+      expect(result).toEqual({ enabled: true });
+    } finally {
+      warn.mockRestore();
+    }
   });
 
-  it("isTrusted:undefined — local file is never read, global returned", () => {
-    writeSettings(home, ".pi/agent/settings.json", { mulligan: { enabled: true } });
-    writeSettings(cwd, ".pi/settings.json", { mulligan: { enabled: false } });
-    expect(loadMulliganSettings({ cwd })).toEqual({ enabled: true });
+  // 10. Non-object top-level → no mulligan key → undefined
+  it("returns undefined for non-object top-level JSON (array)", () => {
+    writeSettings(home, ".pi/agent/settings.json", [1, 2, 3]);
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
   });
 
-  it("opts omitted entirely — reads global-only, no throw", () => {
+  it("returns undefined for non-object top-level JSON (primitive)", () => {
+    writeSettings(home, ".pi/agent/settings.json", 42);
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
+  });
+
+  // 11. Non-object .mulligan returned AS-IS
+  it("returns non-object .mulligan as-is (number)", () => {
+    writeSettings(home, ".pi/agent/settings.json", { mulligan: 42 });
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toBe(42);
+  });
+
+  it("returns non-object .mulligan as-is (string)", () => {
+    writeSettings(home, ".pi/agent/settings.json", { mulligan: "off" });
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toBe("off");
+  });
+
+  // 12. Unrelated keys ignored
+  it("returns only the mulligan value; unrelated keys are not leaked", () => {
+    writeSettings(home, ".pi/agent/settings.json", {
+      packages: [{ name: "foo" }],
+      defaultModel: "gpt-4",
+      mulligan: { enabled: true },
+    });
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ enabled: true });
+  });
+
+  // 13. Opts omitted entirely → global-only
+  it("reads global-only when opts is omitted (isTrusted undefined → no local read)", () => {
     writeSettings(home, ".pi/agent/settings.json", { mulligan: { rewind: { maxDepth: 3 } } });
     expect(loadMulliganSettings()).toEqual({ rewind: { maxDepth: 3 } });
   });
 
-  it("missing global file → undefined, no throw, no warn", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
-      expect(warn).not.toHaveBeenCalled();
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("malformed JSON in global → console.warn fires once, returns local-or-undefined", () => {
-    writeSettings(home, ".pi/agent/settings.json", "{ not json");
-    writeSettings(cwd, ".pi/settings.json", { mulligan: { local: true } });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const globalPath = join(home, ".pi", "agent", "settings.json");
-      expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ local: true });
-      expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain("[mulligan] settings:");
-      expect(warn.mock.calls[0][0]).toContain(globalPath);
-      expect(warn.mock.calls[0][0]).toContain("unreadable:");
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("malformed JSON in local (trusted, global valid) → returns global, warn fires once for local path", () => {
-    writeSettings(home, ".pi/agent/settings.json", { mulligan: { global: true } });
-    writeSettings(cwd, ".pi/settings.json", "{ bad json");
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const localPath = join(cwd, ".pi", "settings.json");
-      expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ global: true });
-      expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain("[mulligan] settings:");
-      expect(warn.mock.calls[0][0]).toContain(localPath);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("non-object top-level (array or primitive) → no mulligan key → undefined", () => {
-    writeSettings(home, ".pi/agent/settings.json", [1, 2, 3]);
-    writeSettings(cwd, ".pi/settings.json", "42");
+  // 14. Consumer contract: undefined → validateConfig(undefined) === DEFAULT_CONFIG
+  it("when returning undefined, validateConfig(undefined) deep-equals DEFAULT_CONFIG", () => {
+    // No files → undefined
     expect(loadMulliganSettings({ cwd, isTrusted: true })).toBeUndefined();
+    expect(validateConfig(undefined)).toEqual(DEFAULT_CONFIG);
   });
 
-  it("non-object .mulligan returned as-is (not validated, not coerced)", () => {
-    writeSettings(home, ".pi/agent/settings.json", { mulligan: 42 });
-    expect(loadMulliganSettings()).toBe(42);
-
-    // Fresh home dir for second assertion
-    rmSync(join(home, ".pi", "agent", "settings.json"), { force: true });
-    writeSettings(home, ".pi/agent/settings.json", { mulligan: "off" });
-    expect(loadMulliganSettings()).toBe("off");
+  // 15. NEVER throws on adversarial input
+  it("never throws on a bad cwd path", () => {
+    expect(() =>
+      loadMulliganSettings({ cwd: "/definitely/does/not/exist", isTrusted: true }),
+    ).not.toThrow();
   });
 
-  it("unrelated top-level keys are NOT leaked — only the mulligan value is returned", () => {
-    writeSettings(home, ".pi/agent/settings.json", {
-      packages: [{ name: "mulligan" }],
-      defaultModel: "gpt-4",
-      mulligan: { enabled: true },
-    });
-    expect(loadMulliganSettings()).toEqual({ enabled: true });
-  });
-
-  it("undefined result → validateConfig(undefined) deepEquals DEFAULT_CONFIG (consumer contract)", () => {
-    // No files exist, so loadMulliganSettings returns undefined
-    const result = loadMulliganSettings();
-    expect(result).toBeUndefined();
-    expect(validateConfig(result)).toEqual(DEFAULT_CONFIG);
-  });
-
-  it("null mulligan → validateConfig(null) === DEFAULT_CONFIG (null is non-record → defaults)", () => {
-    writeSettings(home, ".pi/agent/settings.json", { mulligan: null });
-    const result = loadMulliganSettings();
-    expect(result).toBeNull();
-    expect(validateConfig(result)).toEqual(DEFAULT_CONFIG);
-  });
-
-  it("NEVER throws on adversarial inputs", () => {
-    // Bad cwd dir — local read fails silently
-    expect(() => loadMulliganSettings({ cwd: "/definitely/does/not/exist", isTrusted: true })).not.toThrow();
-    // No opts at all
+  it("never throws with various adversarial calls", () => {
     expect(() => loadMulliganSettings()).not.toThrow();
-    // opts with isTrusted:true but no cwd
+    expect(() => loadMulliganSettings({})).not.toThrow();
     expect(() => loadMulliganSettings({ isTrusted: true })).not.toThrow();
-    // opts with cwd but no isTrusted
-    expect(() => loadMulliganSettings({ cwd: "/tmp" })).not.toThrow();
+    expect(() => loadMulliganSettings({ cwd: "", isTrusted: true })).not.toThrow();
+  });
+
+  // Bonus: both malformed → warn twice, return undefined
+  it("warns once per malformed file when both are malformed", () => {
+    writeSettings(home, ".pi/agent/settings.json", "{ bad global");
+    writeSettings(cwd, ".pi/settings.json", "{ bad local");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const result = loadMulliganSettings({ cwd, isTrusted: true });
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(result).toBeUndefined();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  // Bonus: local file has no mulligan key → global is used (local does not "win" with undefined)
+  it("falls back to global when local file has no mulligan key", () => {
+    writeSettings(home, ".pi/agent/settings.json", { mulligan: { enabled: false } });
+    writeSettings(cwd, ".pi/settings.json", { packages: [] });
+    expect(loadMulliganSettings({ cwd, isTrusted: true })).toEqual({ enabled: false });
   });
 });
