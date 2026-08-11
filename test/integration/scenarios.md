@@ -182,30 +182,38 @@ including `{ toolName: "smoke_read_big" }`.
 
 **Tests:** a turn that grows past the drift threshold injects an ephemeral `mulligan:nudge`; ZERO nudges on disk.
 
-**Run (deterministic):** the deterministic path cannot force the nudge — (a) lowering `driftThresholdTokens`
-via `setConfig` does not work (Pi's jiti loader gives the smoke helper a separate `config.ts` module instance
-from Mulligan's), and (b) the nudge needs two turns (turn 1 establishes the baseline, turn 2 grows past it).
-It asserts only that a turn-metric exists + ZERO nudge entries (the §2.3 invariant).
+**Run (deterministic):** the orchestrator runs F-nudge-drift in a scoped tmp cwd
+(`<tmpdir>/mulligan-smoke/drift-cwd-<RUN_ID>`) whose `.pi/settings.json` sets
+`mulligan.nudges.driftThresholdTokens=1` (honored by Mulligan's OWN `session_start` config read — M1;
+previously impossible because Pi's jiti loader gives the smoke helper a separate `config.ts` instance).
+The run is trusted via `pi -a` (a tmp cwd is not trusted by default). The 4-prompt two-turn harness:
+`/mulligan_smoke F-nudge-drift` (command, no model turn), `Reply with exactly: ALPHA`
+(turn 1 — baseline; `turn_end` #1 `deltaTokens:null`),
+`Reply with exactly: BETA BETA BETA BETA BETA`
+(turn 2 — growth > 1 token; `turn_end` #2 `grewOverThreshold:true`),
+`Reply with exactly: OK` (turn 3 — observing `context.fire` with `hasNudge:true`).
 
 ```bash
-pi -e ./src/index.ts -e ./test/integration/smoke.ts --session-id smoke-F-nudge-drift \
-  -p "/mulligan_smoke F-nudge-drift" -p "Reply with exactly: OK"
+pi -ne -a -e <abs>/src/index.ts -e <abs>/test/integration/smoke.ts \
+  --session-id smoke-F-nudge-drift-<RUN_ID> \
+  -p "/mulligan_smoke F-nudge-drift" \
+  -p "Reply with exactly: ALPHA" \
+  -p "Reply with exactly: BETA BETA BETA BETA BETA" \
+  -p "Reply with exactly: OK"
 ```
+(Run from the scoped tmp cwd so Mulligan's `session_start` reads the local `.pi/settings.json`.)
 
-**Run (model-driven — the authoritative nudge-injection proof):**
-```bash
-pi -e ./src/index.ts -e ./test/integration/smoke.ts \
-  -p "Tell me a very long, detailed story." -p "Now tell me another long one."
-```
-A turn that grows >3000 tokens (default `driftThresholdTokens`) → the next context fire ends with a
-`mulligan:nudge` custom message (`hasNudge:true`); still ZERO `mulligan:nudge` entries in the session JSONL.
+**Run (model-driven):** the deterministic flow already exercises the REAL nudge injection end-to-end
+(`shouldNudge` → `injectNudge` → ephemeral `mulligan:nudge` appended to the filter copy; never persisted).
+It is both deterministic and model-driven, like F-shrink-preventive.
 
-**Expect in log (deterministic):** `config.driftLow` logged.
+**Expect in log (deterministic):** `drift.harness` logged; the last `context.fire` has `hasNudge:true`.
 
-**Expect in JSONL:** `mulligan:turn-metric` (custom) exists; ZERO `mulligan:nudge` entries.
+**Expect in JSONL:** `>=2 mulligan:turn-metric` (custom); at least one with `data.grewOverThreshold === true`
+and a numeric `data.deltaTokens`; ZERO `mulligan:nudge` entries.
 
-**Pass (deterministic):** turn-metric exists; ZERO nudges on disk; §2.3 invariants hold. *(hasNudge:true is
-model-driven — SOFT.)*
+**Pass (deterministic):** `hasNudge:true` is HARD-asserted by `run-smoke.mjs` (the last `context.fire`);
+turn-metric `grewOverThreshold:true`; ZERO nudges on disk; §2.3 invariants hold.
 
 ---
 

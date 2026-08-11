@@ -23,7 +23,7 @@
  * with a note; the smoke log is always available).
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -49,6 +49,7 @@ const PI_TIMEOUT_MS = 120_000;
 // suite IDEMPOTENT (re-running `npm run smoke` no longer flakes F-rewind-core / F-checkpoint with false
 // "LEAKED BACK" / "seed LEAKED" failures from unpinned leftover seed replies).
 const RUN_ID = `${process.pid}-${Date.now().toString(36)}`;
+const PROJECT_ROOT = process.cwd();
 
 // SEED-canary string literals for the deterministic HIDING assertions (P1.M3.T2.S1). MUST be byte-identical to the
 // consts in smoke.ts (GOTCHA #8 — there is no shared module; a mismatch → seed never matches → K=0 → fail).
@@ -62,14 +63,18 @@ const SEED_HIDDEN = "MULLIGAN-SMOKE-SEED-HIDDEN";
  * 2-prompt deterministic flow (`/mulligan_smoke <scenario>` then `Reply with exactly: OK`); pass { prompts } to
  * drive a custom prompt sequence (the SEED flows for F-rewind-core / F-checkpoint — P1.M3.T2.S1).
  */
-function runPi(scenario, { prompts, extraArgs = [] } = {}) {
+function runPi(scenario, { prompts, extraArgs = [], cwd } = {}) {
   const logPath = join(SMOKE_TMP_DIR, `${scenario}.log`);
   // Default = the existing 2-prompt deterministic flow (unchanged for the 12 non-seeded scenarios).
   const ps = prompts ?? [`/mulligan_smoke ${scenario}`, "Reply with exactly: OK"];
+  // When cwd is set (scoped tmp cwd for F-nudge-drift), resolve -e to ABSOLUTE paths + add -a to trust the tmp project.
+  const extSrc = cwd ? join(PROJECT_ROOT, "src/index.ts") : "./src/index.ts";
+  const extSmoke = cwd ? join(PROJECT_ROOT, "test/integration/smoke.ts") : "./test/integration/smoke.ts";
   const argv = [
     "-ne",
-    "-e", "./src/index.ts",
-    "-e", "./test/integration/smoke.ts",
+    ...(cwd ? ["-a"] : []),
+    "-e", extSrc,
+    "-e", extSmoke,
     // Run-scoped session id (RUN_ID): unique per `npm run smoke` invocation → no cross-run JSONL accumulation
     // (FINDING 1). F-reload shares this id across their two spawns WITHIN one run (reloads reopen it).
     "--session-id", `smoke-${scenario}-${RUN_ID}`,
@@ -80,6 +85,7 @@ function runPi(scenario, { prompts, extraArgs = [] } = {}) {
     encoding: "utf8",
     env: { ...process.env, MULLIGAN_SMOKE_LOG: logPath },
     timeout: PI_TIMEOUT_MS,
+    ...(cwd ? { cwd } : {}),
   });
   return { status: res.status, stdout: res.stdout ?? "", stderr: res.stderr ?? "", logPath };
 }
@@ -302,11 +308,22 @@ function assertNudgeDrift({ smoke, piRes }) {
   const results = [];
   const sessionFile = smoke.sessionFile;
   const entries = readSessionEntries(sessionFile);
-  // Deterministic: config.driftLow logged + turn-metric exists + ZERO nudge entries (the §2.3 invariant).
-  assert(results, "config.driftLow logged", smoke.lines.some((l) => l.test === "config.driftLow"), "");
+  // HARD: drift.harness logged (replaces old config.driftLow).
+  assert(results, "drift.harness logged", smoke.lines.some((l) => l.test === "drift.harness"), "");
+  // HARD smoke-log assertions: the two-turn harness produces >=3 context.fires; the LAST has hasNudge:true.
+  assert(results, "context.fire observed (>=3 fires for the two-turn harness)", smoke.contextFires.length >= 3, `${smoke.contextFires.length} fires`);
+  const cf = smoke.contextFires[smoke.contextFires.length - 1];
+  assert(results, "last context.fire hasNudge:true (drift nudge injected — HARD)", cf?.hasNudge === true, String(cf?.hasNudge));
   if (entries.length > 0) {
     const turnMetrics = countCustom(entries, "mulligan:turn-metric", "turn-metric");
     assert(results, "JSONL has turn-metric (custom)", turnMetrics >= 1, `${turnMetrics} found`);
+    // HARD JSONL assertions: >=2 turn-metrics (two-turn harness), grewOverThreshold:true, numeric deltaTokens.
+    const tmEntries = entries.filter((e) => e.type === "custom" && e.customType === "mulligan:turn-metric");
+    assert(results, "JSONL has >=2 turn-metrics (two-turn harness ran)", tmEntries.length >= 2, `${tmEntries.length} found`);
+    const grew = tmEntries.some((e) => e && e.data && e.data.grewOverThreshold === true);
+    assert(results, "turn-metric grewOverThreshold:true (driftThresholdTokens=1 honored — HARD)", grew, grew ? "" : "no turn-metric with grewOverThreshold:true");
+    const realDelta = tmEntries.some((e) => e && e.data && typeof e.data.deltaTokens === "number");
+    assert(results, "turn-metric deltaTokens is a number on >=1 turn (baseline established)", realDelta, "");
     // The §2.3 invariant: ZERO mulligan:nudge on disk (nudges are ephemeral, constructed in the filter copy only).
     const nudgeCount = entries.filter((e) => e.customType === "mulligan:nudge").length;
     assert(results, "§2.3 ZERO mulligan:nudge entries on disk", nudgeCount === 0, nudgeCount ? `${nudgeCount} found` : "");
@@ -314,7 +331,7 @@ function assertNudgeDrift({ smoke, piRes }) {
   } else {
     console.log(`  ⚠ JSONL unavailable (model may have timed out) — smoke-log assertions are primary`);
   }
-  return { results, entries, soft: "hasNudge:true requires a >3000-token turn (model-driven); see scenarios.md" };
+  return { results, entries };
 }
 
 function assertProtected({ smoke, piRes }) {
@@ -465,6 +482,31 @@ function runScenario(scenario) {
     });
     const smoke = parseSmokeLog(piRes.logPath);
     return { piRes, smoke };
+  }
+  // F-nudge-drift: 4-prompt two-turn harness in a scoped tmp cwd whose .pi/settings.json sets
+  // driftThresholdTokens=1 (honored by Mulligan's session_start config read — M1). The tmp cwd is trusted
+  // via pi -a (a tmp dir is not trusted by default). The 4-prompt flow: command (no model turn), then 3 model
+  // turns — turn 1 establishes the baseline (turn_end #1, delta=null), turn 2 grows past threshold=1
+  // (turn_end #2, grewOverThreshold=true), turn 3 is the observing fire (hasNudge:true).
+  if (scenario === "F-nudge-drift") {
+    const driftCwd = join(SMOKE_TMP_DIR, `drift-cwd-${RUN_ID}`);
+    mkdirSync(join(driftCwd, ".pi"), { recursive: true });
+    writeFileSync(join(driftCwd, ".pi", "settings.json"), JSON.stringify({ mulligan: { nudges: { driftThresholdTokens: 1 } } }));
+    try {
+      const piRes = runPi(scenario, {
+        cwd: driftCwd,
+        prompts: [
+          "/mulligan_smoke F-nudge-drift",
+          "Reply with exactly: ALPHA",
+          "Reply with exactly: BETA BETA BETA BETA BETA",
+          "Reply with exactly: OK",
+        ],
+      });
+      const smoke = parseSmokeLog(piRes.logPath);
+      return { piRes, smoke };
+    } finally {
+      try { rmSync(driftCwd, { recursive: true, force: true }); } catch { /* cleanup best-effort */ }
+    }
   }
   // F-shrink-preventive: 2-prompt flow where the second prompt makes the model CALL smoke_read_big (a non-mulligan_*
   // tool whose result exceeds bloatThresholdBytes=8192). The real tool_result event fires bloatReminderHandler →

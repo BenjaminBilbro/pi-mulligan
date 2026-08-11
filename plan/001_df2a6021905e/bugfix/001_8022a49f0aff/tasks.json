@@ -282,14 +282,14 @@
               "id": "P1.M4.T2",
               "type": "Task",
               "title": "Deterministic hasNudge proof (F-nudge-drift)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The drift nudge needs a turn that grows > driftThresholdTokens AND a baseline from a prior turn. Today this is SOFT because setConfig from the smoke helper doesn't affect Mulligan's config instance (jiti double-module). Now that M1 wires Mulligan to read its OWN .pi/settings.json, lower driftThresholdTokens via the project-local settings and drive a controlled two-turn drift so shouldNudge fires deterministically.",
               "subtasks": [
                 {
                   "id": "P1.M4.T2.S1",
                   "type": "Subtask",
                   "title": "Config-driven low drift threshold + two-turn drift harness + hasNudge assertion",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"

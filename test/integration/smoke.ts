@@ -214,15 +214,10 @@ async function driveScenario(pi: ExtensionAPI, ctx: ExtensionCommandContext, sce
         break;
       }
       case "F-nudge-drift": {
-        // The drift nudge fires when a turn's deltaTokens > driftThresholdTokens (default 3000) AND a baseline
-        // exists from a previous turn. The deterministic path CANNOT force this: (a) lowering the threshold via
-        // setConfig does NOT work (jiti gives smoke a separate config.ts instance from Mulligan's — verified),
-        // and (b) the nudge needs two turns (turn 1 establishes the baseline, turn 2 grows past it). So the
-        // deterministic assertions are: a turn-metric entry EXISTS (the turn_end handler ran) + ZERO
-        // mulligan:nudge entries in the session JSONL (the §2.3 invariant — nudges are ephemeral). The
-        // authoritative nudge-injection proof is the MODEL-DRIVEN path (documented in scenarios.md): a turn
-        // that genuinely grows >3000 tokens shows hasNudge:true in context.fire + still 0 nudge entries on disk.
-        smokeLog("config.driftLow", "info", { note: "threshold lowering is model-driven; see scenarios.md" });
+        // Deterministic two-turn drift: the orchestrator runs in a scoped tmp cwd whose .pi/settings.json sets
+        // driftThresholdTokens=1 (honored by Mulligan session_start — M1); prompts drive baseline (turn 1) ->
+        // growth > 1 token (turn 2) -> observing fire hasNudge:true (turn 3); nudge is ephemeral (ZERO on disk).
+        smokeLog("drift.harness", "info", { note: "deterministic two-turn drift: orchestrator runs in a scoped tmp cwd whose .pi/settings.json sets driftThresholdTokens=1 (honored by Mulligan session_start — M1); prompts drive baseline (turn 1) -> growth > 1 token (turn 2) -> observing fire hasNudge:true (turn 3); nudge is ephemeral (ZERO on disk)" });
         break;
       }
       case "F-protected": {

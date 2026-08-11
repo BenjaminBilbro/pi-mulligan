@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M4.T2.S1_1786450552495_pre-execution_c95e7564",
+      "taskId": "P1.M4.T2.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T2_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T12:15:52.495Z"
+      },
+      "createdAt": "2026-08-11T12:15:52.495Z"
+    },
+    {
+      "id": "P1.M4.T2.S1_1786450744286_coder-response_a60a36fe",
+      "taskId": "P1.M4.T2.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T2_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "Only the 3 test/integration files were modified — no `src/` files, no `spec/` files, no pipeline-state files.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M4.T2.S1 implemented successfully. All validation gates passed:\\n- Level 1 (tsc): 0 errors\\n- Level 2 (vitest): 697 passed | 2 skipped\\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\\n\\nChanges made:\\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M4.T2.S1 implemented successfully. All validation gates passed:\n- Level 1 (tsc): 0 errors\n- Level 2 (vitest): 697 passed | 2 skipped\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\n\nChanges made:\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T12:19:04.286Z"
+      },
+      "createdAt": "2026-08-11T12:19:04.286Z"
+    },
+    {
+      "id": "P1.M4.T2.S1_1786450843592_validation-gate-4_a3219286",
+      "taskId": "P1.M4.T2.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T2_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "Only the 3 test/integration files were modified — no `src/` files, no `spec/` files, no pipeline-state files.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M4.T2.S1 implemented successfully. All validation gates passed:\\n- Level 1 (tsc): 0 errors\\n- Level 2 (vitest): 697 passed | 2 skipped\\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\\n\\nChanges made:\\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M4.T2.S1 implemented successfully. All validation gates passed:\n- Level 1 (tsc): 0 errors\n- Level 2 (vitest): 697 passed | 2 skipped\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\n\nChanges made:\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/runtime.test.ts  (17 tests) 7ms\n ✓ test/config.test.ts  (24 tests) 15ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/nudges.test.ts  (26 tests) 8ms\n ✓ test/turn_metric.test.ts  (17 tests) 13ms\n ✓ test/markers.test.ts  (44 tests) 20ms\n ✓ test/notes.test.ts  (71 tests) 22ms\n ✓ test/transforms.test.ts  (130 tests) 32ms\n ✓ test/drift_nudge.test.ts  (9 tests) 9ms\n ✓ test/filter.test.ts  (17 tests) 13ms\n ✓ test/settingsLoader.test.ts  (17 tests) 28ms\n ✓ test/log.test.ts  (15 tests) 41ms\n ✓ test/pipeline.test.ts  (47 tests) 68ms\n ✓ test/tokens.test.ts  (51 tests) 68ms\n ✓ test/integration/load.test.ts  (1 test) 1ms\n ✓ test/branch-isolation.test.ts  (4 tests) 5ms\n ✓ test/tools/audit.test.ts  (45 tests) 17ms\n ✓ test/tools/rewind.test.ts  (36 tests) 22ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 866ms\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/index.test.ts  (6 tests) 908ms\n ✓ test/tools/shrink.test.ts  (23 tests) 65ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  08:19:07\n   Duration  1.71s (transform 2.46s, setup 2ms, collect 9.81s, tests 2.27s, environment 4ms, prepare 3.25s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\n  ⚠ SOFT: seed hiding not verified (hideEntryIds not yet implemented — live last_turn resolution moved the target)\n  ⚠ SOFT: seed hiding requires hideEntryIds pinning (later task); live last_turn resolution at filter time targets the current last user message, not the rewind-time one — see scenarios.md\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint rewind K=0 at filter time (hideEntryIds not yet implemented — live resolution may differ from rewind-time preview)\n  ⚠ SOFT: checkpoint seed hiding not verified (hideEntryIds not yet implemented — live resolution differs)\n  ⚠ SOFT: checkpoint not consumed (hideEntryIds not yet implemented — live resolution may not have triggered auto-expiry)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T12:20:43.592Z"
+      },
+      "createdAt": "2026-08-11T12:20:43.592Z"
+    },
+    {
+      "id": "P1.M4.T2.S1_1786450843594_complete_3874da76",
+      "taskId": "P1.M4.T2.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M4_T2_S1.md",
+        "stage": "complete",
+        "coderResponse": "Only the 3 test/integration files were modified — no `src/` files, no `spec/` files, no pipeline-state files.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M4.T2.S1 implemented successfully. All validation gates passed:\\n- Level 1 (tsc): 0 errors\\n- Level 2 (vitest): 697 passed | 2 skipped\\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\\n\\nChanges made:\\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M4.T2.S1 implemented successfully. All validation gates passed:\n- Level 1 (tsc): 0 errors\n- Level 2 (vitest): 697 passed | 2 skipped\n- Level 3 (smoke): 9/9 scenarios passed; F-nudge-drift HARD-asserts hasNudge:true (SOFT message gone)\n- Level 4 (scope): only 3 test/integration files modified (run-smoke.mjs, smoke.ts, scenarios.md); no src/ changes\n\nChanges made:\n1. run-smoke.mjs: Added PROJECT_ROOT const, writeFileSync/rmSync imports, runPi cwd option (absolute -e paths + -a flag + spawnSync cwd), F-nudge-drift runScenario branch (scoped tmp cwd with driftThresholdTokens=1 + 4-prompt two-turn harness + cleanup), assertNudgeDrift upgraded to HARD (hasNudge:true on last context.fire + grewOverThreshold:true + >=2 turn-metrics + numeric deltaTokens; soft field removed).\n2. smoke.ts: F-nudge-drift driveScenario case logs drift.harness (replaced config.driftLow).\n3. scenarios.md: F-nudge-drift section rewritten from 'model-driven — SOFT' to deterministic tmp-cwd + threshold=1 + two-turn path with HARD hasNudge assertion."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit -p tsconfig.json",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npm test",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 test\n> vitest run\n\n\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/runtime.test.ts  (17 tests) 7ms\n ✓ test/config.test.ts  (24 tests) 15ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/nudges.test.ts  (26 tests) 8ms\n ✓ test/turn_metric.test.ts  (17 tests) 13ms\n ✓ test/markers.test.ts  (44 tests) 20ms\n ✓ test/notes.test.ts  (71 tests) 22ms\n ✓ test/transforms.test.ts  (130 tests) 32ms\n ✓ test/drift_nudge.test.ts  (9 tests) 9ms\n ✓ test/filter.test.ts  (17 tests) 13ms\n ✓ test/settingsLoader.test.ts  (17 tests) 28ms\n ✓ test/log.test.ts  (15 tests) 41ms\n ✓ test/pipeline.test.ts  (47 tests) 68ms\n ✓ test/tokens.test.ts  (51 tests) 68ms\n ✓ test/integration/load.test.ts  (1 test) 1ms\n ✓ test/branch-isolation.test.ts  (4 tests) 5ms\n ✓ test/tools/audit.test.ts  (45 tests) 17ms\n ✓ test/tools/rewind.test.ts  (36 tests) 22ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 866ms\n ✓ test/edge-cases.test.ts  (35 tests) 20ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/index.test.ts  (6 tests) 908ms\n ✓ test/tools/shrink.test.ts  (23 tests) 65ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  697 passed | 2 skipped (699)\n   Start at  08:19:07\n   Duration  1.71s (transform 2.46s, setup 2ms, collect 9.81s, tests 2.27s, environment 4ms, prepare 3.25s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npm run smoke",
+            "stdout": "\n> pi-mulligan-hack@0.1.0 smoke\n> node test/integration/run-smoke.mjs\n\n════════════════════════════════════════════════════════════\n  Mulligan integration smoke harness (deterministic suite)\n════════════════════════════════════════════════════════════\n\n  ⚠ SOFT: seed hiding not verified (hideEntryIds not yet implemented — live last_turn resolution moved the target)\n  ⚠ SOFT: seed hiding requires hideEntryIds pinning (later task); live last_turn resolution at filter time targets the current last user message, not the rewind-time one — see scenarios.md\nPASS F-rewind-core\n\nPASS F-shrink-persist\n\nPASS F-shrink-preventive\n\nPASS F-nudge-drift\n\n  ℹ NOTE: F-protected deterministic path asserts the tool refuses pre-persist (BUG-006); no marker is created\nPASS F-protected\n\nPASS F-maxdepth\n\n  ⚠ SOFT: checkpoint rewind K=0 at filter time (hideEntryIds not yet implemented — live resolution may differ from rewind-time preview)\n  ⚠ SOFT: checkpoint seed hiding not verified (hideEntryIds not yet implemented — live resolution differs)\n  ⚠ SOFT: checkpoint not consumed (hideEntryIds not yet implemented — live resolution may not have triggered auto-expiry)\nPASS F-checkpoint\n\n  ℹ NOTE: F-failopen verifies pass-through; the handler-never-throws unit test in filter.test.ts is authoritative (GOTCHA #9)\nPASS F-failopen\n\nPASS F-reload\n\n──────────────────────────────────────────────────────────\n  9/9 scenarios passed\n──────────────────────────────────────────────────────────\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T12:20:43.594Z"
+      },
+      "createdAt": "2026-08-11T12:20:43.594Z"
+    }
+  ],
+  "lastModified": "2026-08-11T12:20:43.594Z"
+}
