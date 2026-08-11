@@ -471,11 +471,16 @@ export function renderAuditReport(args: {
 
   lines.push("");
 
-  // Suggestion — names rows[0].label (the largest); omitted when filtered is empty (handled above)
+  // Suggestion — role-aware (BUG-008): branches on rows[0].role; omitted when filtered is empty (handled above)
   if (rows.length > 0) {
-    lines.push(
-      `Suggestion: the \`${rows[0].label}\` result is the largest contributor. Consider mulligan_shrink.`,
-    );
+    const { role, label } = rows[0];
+    const suggestion =
+      role === "toolResult"
+        ? `Suggestion: the \`${label}\` result is the largest contributor. Consider mulligan_shrink.`
+        : role === "assistant"
+          ? `Suggestion: the assistant turn \`${label}\` is the largest contributor. Consider mulligan_rewind (last_tool_call_group) or mulligan_shrink.`
+          : `Suggestion: the largest contributor is the \`${label}\` message (role: \`${role}\`); no Mulligan operation applies to a non-tool message.`;
+    lines.push(suggestion);
   }
 
   return lines.join("\n") + "\n";

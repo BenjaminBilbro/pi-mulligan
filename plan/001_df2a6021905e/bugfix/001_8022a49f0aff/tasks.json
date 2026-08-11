@@ -190,7 +190,7 @@
           "id": "P1.M3",
           "type": "Milestone",
           "title": "Branch scoping, persist integrity & audit polish (BUG-004 + BUG-005 + BUG-008)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Three independent minor/cosmetic fixes. BUG-004: marker/label reads use getEntries() (every branch) instead of getBranch() (current branch), so /tree navigation leaks sibling-branch markers. BUG-005: the rewind tool reports success even when appendRewindMarker failed to persist (null not checked). BUG-008: the audit Suggestion line hard-codes 'result'/'mulligan_shrink' even when the largest carrier is a user or assistant message. All three are small, isolated, and independently testable.",
           "tasks": [
             {
@@ -235,14 +235,14 @@
               "id": "P1.M3.T3",
               "type": "Task",
               "title": "Audit Suggestion line — role-aware (BUG-008)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "renderAuditReport always emits 'the `<rows[0].label>` result is the largest contributor. Consider mulligan_shrink.' even when rows[0] is a user message or an assistant message. Make the Suggestion honest per the largest carrier's role (shrink is meaningful for toolResult; rewind/shrink for assistant; nothing actionable for a user paste).",
               "subtasks": [
                 {
                   "id": "P1.M3.T3.S1",
                   "type": "Subtask",
                   "title": "Role-aware Suggestion line + per-role tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (tools/audit.ts renderAuditReport + design_decisions.md BUG-008) the Suggestion block hard-codes `the \\`${rows[0].label}\\` result is the largest contributor. Consider mulligan_shrink.` spec/05 §4's example only shows this line for a toolResult. describeMessage labels: toolResult → `${toolName} ${args}`; assistant → summarizeAssistantContent e.g. \"(thinking + toolCall x2)\"; user → `user \"<snippet>\"`. The line reads awkwardly for non-toolResult carriers. The empty-filtered-view branch already OMITS the Suggestion (unchanged).\n2. INPUT: renderAuditReport's `rows: AuditRow[]` (each has .role + .label) and the filtered[] guard.\n3. LOGIC: When rows.length > 0, branch on rows[0].role: (a) role===\"toolResult\" → unchanged text `Suggestion: the \\`${label}\\` result is the largest contributor. Consider mulligan_shrink.`; (b) role===\"assistant\" → `Suggestion: the assistant turn \\`${label}\\` is the largest contributor. Consider mulligan_rewind (last_tool_call_group) or mulligan_shrink.`; (c) otherwise (user/custom/unknown) → `Suggestion: the largest contributor is the \\`${label}\\` message (role: \\`${role}\\`); no Mulligan operation applies to a non-tool message.`. Keep the trailing newline behavior identical. NEVER throws.\n4. OUTPUT: the Suggestion is honest per role. Add test/tools/audit.test.ts cases: rows[0].role = toolResult/assistant/user each render the matching Suggestion substring; the empty-filtered-view case still omits the Suggestion. DOCS: if README §6 quotes the Suggestion format, sync it in P1.M5.T1 (Mode B).",

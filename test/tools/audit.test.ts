@@ -572,6 +572,58 @@ describe("renderAuditReport — pure unit cases", () => {
   });
 });
 
+// ── (l2) renderAuditReport — role-aware Suggestion (BUG-008) ──────────
+
+describe("renderAuditReport — role-aware Suggestion (BUG-008)", () => {
+  const base = {
+    totalTokens: 100,
+    confidence: "medium" as const,
+    rewinds: [],
+    shrinks: [],
+    checkpointNames: [],
+    protectedRoles: [],
+    filtered: [{ role: "user", content: "hi" }],
+  };
+  function row(role: string, label: string): AuditRow {
+    return { tokens: 1000, role, label, bloaty: false, thresholdBytes: 8192 };
+  }
+  it("rows[0].role === 'toolResult' → unchanged toolResult Suggestion", () => {
+    const report = renderAuditReport({ ...base, rows: [row("toolResult", "read src/big.log")] });
+    expect(report).toContain("Suggestion:");
+    expect(report).toContain("the `read src/big.log` result is the largest contributor.");
+    expect(report).toContain("Consider mulligan_shrink.");
+    expect(report).not.toContain("the assistant turn");
+    expect(report).not.toContain("no Mulligan operation applies");
+  });
+  it("rows[0].role === 'assistant' → assistant-turn Suggestion naming rewind + shrink", () => {
+    const report = renderAuditReport({ ...base, rows: [row("assistant", "(thinking + toolCall x2)")] });
+    expect(report).toContain("Suggestion:");
+    expect(report).toContain("the assistant turn `(thinking + toolCall x2)` is the largest contributor.");
+    expect(report).toContain("Consider mulligan_rewind (last_tool_call_group) or mulligan_shrink.");
+    expect(report).not.toContain("result is the largest contributor.");
+    expect(report).not.toContain("no Mulligan operation applies");
+  });
+  it("rows[0].role === 'user' → honest 'no Mulligan operation applies' Suggestion with role echoed", () => {
+    const report = renderAuditReport({ ...base, rows: [row("user", 'user "hello world"')] });
+    expect(report).toContain("Suggestion:");
+    expect(report).toContain("the largest contributor is the");
+    expect(report).toContain("message (role: `user`)");
+    expect(report).toContain("no Mulligan operation applies to a non-tool message.");
+    expect(report).not.toContain("Consider mulligan_shrink.");
+    expect(report).not.toContain("the assistant turn");
+  });
+  it("rows[0].role === 'custom' (otherwise branch) → same 'no op' Suggestion with role echoed", () => {
+    const report = renderAuditReport({ ...base, rows: [row("custom", "mulligan:note")] });
+    expect(report).toContain("no Mulligan operation applies to a non-tool message.");
+    expect(report).toContain("message (role: `custom`)");
+  });
+  it("empty filtered view → STILL omits the Suggestion (regression)", () => {
+    const report = renderAuditReport({ ...base, rows: [], filtered: [] });
+    expect(report).toContain("No messages in filtered view.");
+    expect(report).not.toContain("Suggestion:");
+  });
+});
+
 // ── (m) PURE helper unit cases ──────────────────────────────────────────
 
 describe("describeMessage — pure unit cases", () => {
