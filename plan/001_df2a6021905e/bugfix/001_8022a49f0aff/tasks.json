@@ -216,14 +216,14 @@
               "id": "P1.M3.T2",
               "type": "Task",
               "title": "Null-check the marker persist result (BUG-005)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "appendRewindMarker returns null when pi.appendEntry throws or getLeafId() returns null, but rewindExecute does not check — it proceeds to leaveNote and returns the success text. Add a null-check that returns a refusal and skips the note, so the agent is never told a rewind succeeded when nothing will be hidden.",
               "subtasks": [
                 {
                   "id": "P1.M3.T2.S1",
                   "type": "Subtask",
                   "title": "Add null-check refusal before leaveNote + test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: (tools/rewind.ts execute step 7 + markers.ts appendRewindMarker) step 7 is `const markerId = appendRewindMarker(pi, ctx, payload); leaveNote(pi, { content: rendered, rewindId: markerId ?? toolCallId });` — no null gate. appendRewindMarker returns string|null (null on appendEntry throw or null getLeafId). The shared refusal() helper prefixes \"Mulligan: refused — \".\n2. INPUT: markerId (string|null) from appendRewindMarker; the existing refusal() helper.\n3. LOGIC: Immediately after `const markerId = appendRewindMarker(pi, ctx, payload);`, add `if (markerId === null) return refusal(\"failed to persist the rewind marker (nothing will be hidden); no changes were made\", granularity);`. This MUST come BEFORE leaveNote so no stray note is sent for a failed rewind. details.markerId stays absent (it is only set on the success path). Keep the existing success path (leaveNote + successText) unchanged for the non-null case.\n4. OUTPUT: a failed persist yields a refusal text and sends NO note. Add test/tools/rewind.test.ts: inject a fake pi whose appendEntry throws (and a second case whose sessionManager.getLeafId() returns null); assert the tool returns content text starting with \"Mulligan: refused —\", AND pi.sendMessage (the note) was NOT called, AND pi.appendEntry was attempted exactly once.",

@@ -449,6 +449,8 @@ async function rewindExecute(
 
     // (7) persist (step 7). excludeToolCallId === toolCallId. The marker's own id/seq/ts are stamped
     //     by appendRewindMarker. RewindMarkerInput already has checkpoint?: string → NO cast needed.
+    //     If the marker could not be persisted (null — appendEntry threw or getLeafId returned null),
+    //     refuse BEFORE leaveNote so no stray note is sent for a failed rewind (BUG-005).
     const payload: RewindMarkerInput = {
       granularity,
       options: {
@@ -462,6 +464,12 @@ async function rewindExecute(
       ...(hideEntryIds.length > 0 ? { hideEntryIds } : {}),
     };
     const markerId = appendRewindMarker(pi, ctx, payload);
+    if (markerId === null) {
+      return refusal(
+        "failed to persist the rewind marker (nothing will be hidden); no changes were made",
+        granularity,
+      );
+    }
     leaveNote(pi, { content: rendered, rewindId: markerId ?? toolCallId });
 
     // (8) mutation warning (step 8 / E5) — VERBATIM (spec/08 E5) iff configured + the ledger shows side effects.

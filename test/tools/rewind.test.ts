@@ -68,8 +68,10 @@ function makePi(opts: {
     display: boolean;
     details?: unknown;
   }[] = [];
+  let appendEntryCalls = 0;
   const pi = {
     appendEntry(customType: string, data?: unknown) {
+      appendEntryCalls += 1;
       if (opts.throwOnAppend) throw new Error("appendEntry boom");
       appended.push({ customType, data });
     },
@@ -80,7 +82,7 @@ function makePi(opts: {
       sent.push(message);
     },
   };
-  return { appended, sent, pi: pi as unknown as ExtensionAPI };
+  return { appended, sent, appendEntryCalls: () => appendEntryCalls, pi: pi as unknown as ExtensionAPI };
 }
 
 /**
@@ -641,21 +643,32 @@ describe("mulligan_rewind — types", () => {
   });
 });
 
-// ── leafId null fallback (rewindId = markerId ?? toolCallId) ──────────────
+// ── BUG-005: null persist result refusal ─────────────────────────────
 
-describe("mulligan_rewind — leafId null fallback", () => {
-  it("getLeafId returns null → rewindId falls back to toolCallId", async () => {
-    const { sent, pi } = makePi();
+describe("mulligan_rewind — BUG-005: null persist result refusal", () => {
+  it("appendEntry THROWS → refusal text; NO note; appendEntry attempted exactly once", async () => {
+    const { appended, sent, appendEntryCalls, pi } = makePi({ throwOnAppend: true });
+    const { ctx } = makeCtx();
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
+
+    expect(firstText(res)).toMatch(/^Mulligan: refused — failed to persist the rewind marker/);
+    expect(firstText(res)).toContain("nothing will be hidden");
+    expect(sent).toHaveLength(0); // NO note sent
+    expect(appended).toHaveLength(0); // throw before push
+    expect(appendEntryCalls()).toBe(1); // appendEntry was attempted exactly once
+    expect(res.details).toEqual({ granularity: "last_tool_call_group" });
+  });
+
+  it("getLeafId returns null → refusal text; NO note; appendEntry attempted exactly once", async () => {
+    const { appended, sent, appendEntryCalls, pi } = makePi();
     const { ctx } = makeCtx({ leafId: null });
-    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, "my-call-id");
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
-    // The note should still be sent (leaveNote is fail-open on append failure,
-    // but appendRewindMarker caught the getLeafId→null internally, returning null markerId)
-    // Actually: appendRewindMarker catches getLeafId returning null → returns null.
-    // markerId = null → rewindId = null ?? "my-call-id" = "my-call-id"
-    // Check that the note was sent (if it was; leaveNote doesn't throw on failure)
-    const text = firstText(res);
-    expect(text).toMatch(/^Mulligan: rewound/);
+    expect(firstText(res)).toMatch(/^Mulligan: refused — failed to persist the rewind marker/);
+    expect(sent).toHaveLength(0); // NO note sent
+    expect(appended).toHaveLength(1); // push succeeded, getLeafId null came after
+    expect(appendEntryCalls()).toBe(1); // appendEntry attempted exactly once
+    expect(res.details).toEqual({ granularity: "last_tool_call_group" });
   });
 });
 
