@@ -18,7 +18,7 @@
               "id": "P1.M1.T1",
               "type": "Task",
               "title": "settingsLoader — pure disk-read + merge helper",
-              "status": "Planned",
+              "status": "Complete",
               "description": "A new Pi-free module that reads global ~/.pi/agent/settings.json and (when trusted) project-local <cwd>/.pi/settings.json, extracts the `mulligan` key, and applies project-local-over-global precedence. Never throws. Unit-testable with tmp-dir fixtures.",
               "subtasks": [
                 {
@@ -35,7 +35,7 @@
                   "id": "P1.M1.T1.S2",
                   "type": "Subtask",
                   "title": "Unit tests test/settingsLoader.test.ts — merge, trust, never-throw",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"
