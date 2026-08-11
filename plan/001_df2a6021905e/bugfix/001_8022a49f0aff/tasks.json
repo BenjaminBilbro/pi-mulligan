@@ -91,7 +91,7 @@
               "id": "P1.M2.T1",
               "type": "Task",
               "title": "Pin rewind targets at creation (BUG-002)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add an optional hideEntryIds field (anticipated by existing TODO comments in markers.ts/transforms.ts). At rewind creation, map the resolved removal indices back to their source SessionEntry ids and store them on the marker. In the filter, when a rewind carries hideEntryIds, resolve its removal set by mapping those entry ids to CURRENT message indices (via a shared entry→message helper) instead of the live relative resolver — so a later rewind cannot retarget an earlier one and originally-hidden content cannot reappear. Markers without hideEntryIds fall back to live resolution (backward compat — the existing 635-test suite stays green).",
               "subtasks": [
                 {
@@ -143,7 +143,7 @@
                   "id": "P1.M2.T1.S5",
                   "type": "Subtask",
                   "title": "Composition regression test — originally-hidden CONTENT stays hidden after a 2nd rewind",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S4"

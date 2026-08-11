@@ -632,3 +632,82 @@ describe("filterPipeline — hideEntryIds pin resolution (BUG-002; P1.M2.T1.S4)"
     expectNoOrphans(out);
   });
 });
+
+// ── filterPipeline — stacked-rewind BUG-002 content regression (P1.M2.T1.S5) ────────────────────────
+
+describe("filterPipeline — stacked-rewind BUG-002 content regression (P1.M2.T1.S5)", () => {
+  /** Content-bearing toolResult for absence/presence assertions.
+   *  The file-level result() helper defaults content to '...' and cannot prove content absence.
+   *  This is describe-scoped (the S4 describe has its own resultText — no collision). */
+  function resultText(toolCallId: string, text: string): MessageLike {
+    return { role: "toolResult", toolCallId, toolName: "tool", content: [{ type: "text", text }], isError: false };
+  }
+
+  /** BUG-002 fixture: 11 messages with interspersed non-rewound content (read→rewind→grep→rewind)
+   *  + 11 branch entries (all type 'message', ROOT→LEAF) for pin resolution. */
+  function fixture(): { msgs: MessageLike[]; branch: BranchEntry[] } {
+    const msgs: MessageLike[] = [
+      user("u0"),
+      asst("cRead"), resultText("cRead", "BIG-READ-OUTPUT"),
+      asst("cR1"), resultText("cR1", "rewound"),
+      custom("mulligan:note"),
+      asst("cGrep"), resultText("cGrep", "GREP-OUTPUT"),
+      asst("cR2"), resultText("cR2", "rewound"),
+      custom("mulligan:note"),
+    ];
+    const branch: BranchEntry[] = [
+      entry("e-u", "message"),
+      entry("e-read-a", "message"), entry("e-read-r", "message"),
+      entry("e-r1-a", "message"), entry("e-r1-r", "message"),
+      entry("e-note1", "message"),
+      entry("e-grep-a", "message"), entry("e-grep-r", "message"),
+      entry("e-r2-a", "message"), entry("e-r2-r", "message"),
+      entry("e-note2", "message"),
+    ];
+    return { msgs, branch };
+  }
+
+  it("PIN — two stacked last_tool_call_group rewinds with pinned targets keep originally-hidden content hidden (BUG-002)", () => {
+    const { msgs, branch } = fixture();
+    const markers: MarkerBundle = {
+      rewinds: [
+        mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-read-a", "e-read-r"] }),
+        mkRewind(2, "last_tool_call_group", { hideEntryIds: ["e-grep-a", "e-grep-r"] }),
+      ],
+      shrinks: [],
+    };
+    const out = filterPipeline(msgs, markers, cfg, branch);
+    const s = JSON.stringify(out);
+    // Success criterion #4: originally-hidden content STAYS hidden after a second rewind.
+    expect(s.includes("BIG-READ-OUTPUT")).toBe(false);
+    expect(s.includes("GREP-OUTPUT")).toBe(false);
+    // Both rewind results survive.
+    expect(s.includes("rewound")).toBe(true);
+    // Both mulligan:note customs survive (last_tool_call_group removes only toolGroup units).
+    expect(out.filter((m) => m.role === "custom")).toHaveLength(2);
+    // Expected role layout: user + rewind#1 (asst+result) + note + rewind#2 (asst+result) + note.
+    expect(out.map((m) => m.role)).toEqual(["user", "assistant", "toolResult", "custom", "assistant", "toolResult", "custom"]);
+    expectNoOrphans(out);
+  });
+
+  it("LIVE fallback — same fixture WITHOUT hideEntryIds (legacy markers) yields a valid role-correct orphan-free output", () => {
+    const { msgs, branch } = fixture();
+    const markers: MarkerBundle = {
+      rewinds: [
+        mkRewind(1, "last_tool_call_group", { excludeToolCallId: "cR1" }),
+        mkRewind(2, "last_tool_call_group", { excludeToolCallId: "cR2" }),
+      ],
+      shrinks: [],
+    };
+    const out = filterPipeline(msgs, markers, cfg, branch);
+    // Structural validity (backward-compat proof).
+    expectNoOrphans(out);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out[0].role).toBe("user");
+    // Documentation assertion: under live resolution the originally-hidden read REAPPEARS.
+    // This is the BUG-002 defect that hideEntryIds fixes — the live path does NOT know what
+    // was originally hidden, so BIG-READ-OUTPUT is still present. This assertion is NOT a bug
+    // in the live path; it documents WHY hideEntryIds exists.
+    expect(JSON.stringify(out).includes("BIG-READ-OUTPUT")).toBe(true);
+  });
+});
