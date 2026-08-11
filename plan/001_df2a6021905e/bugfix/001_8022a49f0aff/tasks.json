@@ -85,7 +85,7 @@
           "id": "P1.M2",
           "type": "Milestone",
           "title": "Minor composition correctness (BUG-003, BUG-004)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "The two MINOR bugs affect edge-case composition of multiple markers. BUG-003: the LIVE (unpinned) last_tool_call_group fallback inverts under sequential rewinds because it excludes only the current marker's own call, not all rewind calls. BUG-004: by_content_includes multi-shrink violates E17 'last wins' because each shrink re-resolves against the already-substituted working list. Both touch filterPipeline but in disjoint branches (the last_tool_call_group resolver call vs the shrink loop). Merge-ordered after M1.",
           "tasks": [
             {
@@ -114,14 +114,14 @@
               "id": "P1.M2.T2",
               "type": "Task",
               "title": "BUG-004 — by_content_includes multi-shrink satisfies E17 'last wins'",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Two by_content_includes shrinks on the same target: the second silently no-ops because the first shrink's substitution removes the needle from the working list. Fix: resolve ALL shrink targets against the ORIGINAL pre-shrink message list (stable indices) before applying any substitution, then apply by index in seq order (last-wins naturally for same-index; different indices both apply). Safe for all three matchers (shrinks never remove messages or change role/toolCallId/toolName).",
               "subtasks": [
                 {
                   "id": "P1.M2.T2.S1",
                   "type": "Subtask",
                   "title": "filterPipeline shrink loop resolves targets against the ORIGINAL messages so by_content_includes last-wins",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S1",

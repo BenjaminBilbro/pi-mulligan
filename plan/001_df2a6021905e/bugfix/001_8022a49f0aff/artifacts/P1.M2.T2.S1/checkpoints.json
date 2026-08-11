@@ -2,97 +2,6 @@
   "version": "1.0",
   "checkpoints": [
     {
-      "id": "P1.M2.T2.S1_1786445218286_pre-execution_ef71f3ed",
-      "taskId": "P1.M2.T2.S1",
-      "label": "Before Coder Agent execution",
-      "state": {
-        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
-        "stage": "pre-execution",
-        "validationResults": [],
-        "timestamp": "2026-08-11T10:46:58.286Z"
-      },
-      "createdAt": "2026-08-11T10:46:58.286Z"
-    },
-    {
-      "id": "P1.M2.T2.S1_1786445279726_coder-response_ecb195c6",
-      "taskId": "P1.M2.T2.S1",
-      "label": "After Coder Agent response",
-      "state": {
-        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
-        "stage": "coder-response",
-        "coderResponse": "All 684 tests pass across all 22 test files. Zero regressions.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"All validation gates passed. protectedOk in src/transforms.ts was refactored to add the latest:user enforcement branch (BUG-003 filter layer). Changes: (1) src/transforms.ts — replaced early-return structure with independent per-selector fall-through (protectFirstUser + protectLatestUser computed independently; latest:user block computes iLatestUser as LAST role:'user' index and refuses if remove contains it). (2) test/pipeline.test.ts — updated 1 existing test ('protectedRoles omitting first:user') with a two-user fixture to avoid tripping the now-active latest:user check; added 4 contract tests (a–d). Validation: tsc --noEmit clean (0 errors); 16/16 protectedOk tests green; 684/684 full suite green (edge-cases.test.ts E3 block + filter.test.ts unaffected).\"\n}\n```",
-        "coderResult": {
-          "result": "success",
-          "message": "All validation gates passed. protectedOk in src/transforms.ts was refactored to add the latest:user enforcement branch (BUG-003 filter layer). Changes: (1) src/transforms.ts — replaced early-return structure with independent per-selector fall-through (protectFirstUser + protectLatestUser computed independently; latest:user block computes iLatestUser as LAST role:'user' index and refuses if remove contains it). (2) test/pipeline.test.ts — updated 1 existing test ('protectedRoles omitting first:user') with a two-user fixture to avoid tripping the now-active latest:user check; added 4 contract tests (a–d). Validation: tsc --noEmit clean (0 errors); 16/16 protectedOk tests green; 684/684 full suite green (edge-cases.test.ts E3 block + filter.test.ts unaffected)."
-        },
-        "validationResults": [],
-        "timestamp": "2026-08-11T10:47:59.726Z"
-      },
-      "createdAt": "2026-08-11T10:47:59.726Z"
-    },
-    {
-      "id": "P1.M2.T2.S1_1786445285587_validation-gate-4_185050e0",
-      "taskId": "P1.M2.T2.S1",
-      "label": "After validation gate 4",
-      "state": {
-        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
-        "stage": "validation-gate-4",
-        "coderResponse": "All 684 tests pass across all 22 test files. Zero regressions.\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"All validation gates passed. protectedOk in src/transforms.ts was refactored to add the latest:user enforcement branch (BUG-003 filter layer). Changes: (1) src/transforms.ts — replaced early-return structure with independent per-selector fall-through (protectFirstUser + protectLatestUser computed independently; latest:user block computes iLatestUser as LAST role:'user' index and refuses if remove contains it). (2) test/pipeline.test.ts — updated 1 existing test ('protectedRoles omitting first:user') with a two-user fixture to avoid tripping the now-active latest:user check; added 4 contract tests (a–d). Validation: tsc --noEmit clean (0 errors); 16/16 protectedOk tests green; 684/684 full suite green (edge-cases.test.ts E3 block + filter.test.ts unaffected).\"\n}\n```",
-        "coderResult": {
-          "result": "success",
-          "message": "All validation gates passed. protectedOk in src/transforms.ts was refactored to add the latest:user enforcement branch (BUG-003 filter layer). Changes: (1) src/transforms.ts — replaced early-return structure with independent per-selector fall-through (protectFirstUser + protectLatestUser computed independently; latest:user block computes iLatestUser as LAST role:'user' index and refuses if remove contains it). (2) test/pipeline.test.ts — updated 1 existing test ('protectedRoles omitting first:user') with a two-user fixture to avoid tripping the now-active latest:user check; added 4 contract tests (a–d). Validation: tsc --noEmit clean (0 errors); 16/16 protectedOk tests green; 684/684 full suite green (edge-cases.test.ts E3 block + filter.test.ts unaffected)."
-        },
-        "validationResults": [
-          {
-            "level": 1,
-            "description": "Level 1 gate",
-            "success": true,
-            "command": "npx tsc --noEmit",
-            "stdout": "",
-            "stderr": "",
-            "exitCode": 0,
-            "skipped": false,
-            "timedOut": false
-          },
-          {
-            "level": 2,
-            "description": "Level 2 gate",
-            "success": true,
-            "command": "npx vitest run test/pipeline.test.ts -t \"protectedOk\"",
-            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/pipeline.test.ts  (47 tests | 31 skipped) 3ms\n\n Test Files  1 passed (1)\n      Tests  16 passed | 31 skipped (47)\n   Start at  06:48:03\n   Duration  400ms (transform 63ms, setup 0ms, collect 49ms, tests 3ms, environment 0ms, prepare 207ms)\n\n",
-            "stderr": "",
-            "exitCode": 0,
-            "skipped": false,
-            "timedOut": false
-          },
-          {
-            "level": 3,
-            "description": "Level 3 gate",
-            "success": true,
-            "command": "npx vitest run",
-            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/integration/load.test.ts  (1 test) 3ms\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 10ms\n ✓ test/transforms.test.ts  (130 tests) 19ms\n ✓ test/config.test.ts  (24 tests) 18ms\n ✓ test/runtime.test.ts  (17 tests) 11ms\n ✓ test/turn_metric.test.ts  (17 tests) 10ms\n ✓ test/settingsLoader.test.ts  (17 tests) 17ms\n ✓ test/pipeline.test.ts  (47 tests) 40ms\n ✓ test/ledger.test.ts  (39 tests) 16ms\n ✓ test/markers.test.ts  (44 tests) 16ms\n ✓ test/drift_nudge.test.ts  (9 tests) 9ms\n ✓ test/nudges.test.ts  (26 tests) 12ms\n ✓ test/log.test.ts  (15 tests) 26ms\n ✓ test/tokens.test.ts  (51 tests) 34ms\n ✓ test/filter.test.ts  (17 tests) 13ms\n ✓ test/tools/audit.test.ts  (40 tests) 15ms\n ✓ test/tools/shrink.test.ts  (23 tests) 9ms\n ✓ test/edge-cases.test.ts  (35 tests) 22ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 8ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 812ms\n ✓ test/tools/rewind.test.ts  (32 tests) 31ms\n ✓ test/index.test.ts  (6 tests) 907ms\n\n Test Files  22 passed | 1 skipped (23)\n      Tests  684 passed | 2 skipped (686)\n   Start at  06:48:03\n   Duration  1.58s (transform 3.21s, setup 0ms, collect 8.66s, tests 2.06s, environment 4ms, prepare 3.32s)\n\n",
-            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
-            "exitCode": 0,
-            "skipped": false,
-            "timedOut": false
-          },
-          {
-            "level": 4,
-            "description": "Level 4 gate",
-            "success": true,
-            "command": null,
-            "stdout": "",
-            "stderr": "",
-            "exitCode": null,
-            "skipped": true,
-            "timedOut": false
-          }
-        ],
-        "timestamp": "2026-08-11T10:48:05.587Z"
-      },
-      "createdAt": "2026-08-11T10:48:05.587Z"
-    },
-    {
       "id": "P1.M2.T2.S1_1786445285588_complete_548c3e80",
       "taskId": "P1.M2.T2.S1",
       "label": "Task completed successfully",
@@ -153,7 +62,160 @@
         "timestamp": "2026-08-11T10:48:05.588Z"
       },
       "createdAt": "2026-08-11T10:48:05.588Z"
+    },
+    {
+      "id": "P1.M2.T2.S1_1786456395336_pre-execution_180b2bd4",
+      "taskId": "P1.M2.T2.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T13:53:15.336Z"
+      },
+      "createdAt": "2026-08-11T13:53:15.336Z"
+    },
+    {
+      "id": "P1.M2.T2.S1_1786456437612_coder-response_26c9aca8",
+      "taskId": "P1.M2.T2.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "All levels pass. Let me verify the final validation checklist:\n\n**Level 1**: `npx tsc --noEmit` — ✅ clean (zero errors, exit 0)\n\n**Level 2**: `npx vitest run test/pipeline.test.ts -t \"protectedOk\"` — ✅ 16 passed (all existing first:user tests + updated test + 4 new tests a–d)\n\n**Level 3**: `npx vitest run` — ✅ 699 passed, 0 failed across 24 test files (including `edge-cases.test.ts` E3 block and `filter.test.ts` unaffected)\n\n**Level 4** (Manual reasoning): The BUG-003 repro — messages `[user(\"u0\"), user(\"u1 LATEST\"), asst(\"work\")]`, remove=[1] → `protectedOk` now returns `false` (test (a) encodes this exact scenario) → filterPipeline skips the rewind → latest user message survives.\n\nAll success criteria verified:\n- ✅ (a) checkpoint-style remove containing iLatestUser → false\n- ✅ (b) remove NOT containing iLatestUser → true\n- ✅ (c) config omitting latest:user → not enforced (true)\n- ✅ (d) single-user iFirstUser===iLatestUser + remove contains it → false\n- ✅ protectLatestUser defaults true when protectedRoles absent/empty/malformed (fail-safe)\n- ✅ All existing first:user tests stay green\n- ✅ protectedOk NEVER throws (E13), no new imports, transforms.ts stays Pi-free\n- ✅ Only `src/transforms.ts` and `test/pipeline.test.ts` were modified\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected).\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected)."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T13:53:57.612Z"
+      },
+      "createdAt": "2026-08-11T13:53:57.612Z"
+    },
+    {
+      "id": "P1.M2.T2.S1_1786456443528_validation-gate-4_00148728",
+      "taskId": "P1.M2.T2.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "All levels pass. Let me verify the final validation checklist:\n\n**Level 1**: `npx tsc --noEmit` — ✅ clean (zero errors, exit 0)\n\n**Level 2**: `npx vitest run test/pipeline.test.ts -t \"protectedOk\"` — ✅ 16 passed (all existing first:user tests + updated test + 4 new tests a–d)\n\n**Level 3**: `npx vitest run` — ✅ 699 passed, 0 failed across 24 test files (including `edge-cases.test.ts` E3 block and `filter.test.ts` unaffected)\n\n**Level 4** (Manual reasoning): The BUG-003 repro — messages `[user(\"u0\"), user(\"u1 LATEST\"), asst(\"work\")]`, remove=[1] → `protectedOk` now returns `false` (test (a) encodes this exact scenario) → filterPipeline skips the rewind → latest user message survives.\n\nAll success criteria verified:\n- ✅ (a) checkpoint-style remove containing iLatestUser → false\n- ✅ (b) remove NOT containing iLatestUser → true\n- ✅ (c) config omitting latest:user → not enforced (true)\n- ✅ (d) single-user iFirstUser===iLatestUser + remove contains it → false\n- ✅ protectLatestUser defaults true when protectedRoles absent/empty/malformed (fail-safe)\n- ✅ All existing first:user tests stay green\n- ✅ protectedOk NEVER throws (E13), no new imports, transforms.ts stays Pi-free\n- ✅ Only `src/transforms.ts` and `test/pipeline.test.ts` were modified\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected).\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected)."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/pipeline.test.ts -t \"protectedOk\"",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/pipeline.test.ts  (47 tests | 31 skipped) 3ms\n\n Test Files  1 passed (1)\n      Tests  16 passed | 31 skipped (47)\n   Start at  09:54:00\n   Duration  397ms (transform 60ms, setup 0ms, collect 56ms, tests 3ms, environment 0ms, prepare 186ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 18ms\n ✓ test/runtime.test.ts  (17 tests) 18ms\n ✓ test/pipeline.test.ts  (47 tests) 47ms\n ✓ test/ledger.test.ts  (39 tests) 18ms\n ✓ test/config.test.ts  (24 tests) 15ms\n ✓ test/settingsLoader.test.ts  (19 tests) 17ms\n ✓ test/drift_nudge.test.ts  (9 tests) 11ms\n ✓ test/nudges.test.ts  (26 tests) 8ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/turn_metric.test.ts  (17 tests) 15ms\n ✓ test/transforms.test.ts  (130 tests) 29ms\n ✓ test/markers.test.ts  (44 tests) 23ms\n ✓ test/log.test.ts  (15 tests) 31ms\n ✓ test/tokens.test.ts  (51 tests) 52ms\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/tools/rewind.test.ts  (36 tests) 19ms\n ✓ test/edge-cases.test.ts  (35 tests) 26ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 858ms\n ✓ test/branch-isolation.test.ts  (4 tests) 22ms\n ✓ test/tools/audit.test.ts  (45 tests) 48ms\n ✓ test/index.test.ts  (6 tests) 1036ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  699 passed | 2 skipped (701)\n   Start at  09:54:01\n   Duration  1.66s (transform 2.60s, setup 0ms, collect 9.53s, tests 2.35s, environment 5ms, prepare 3.24s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T13:54:03.527Z"
+      },
+      "createdAt": "2026-08-11T13:54:03.528Z"
+    },
+    {
+      "id": "P1.M2.T2.S1_1786456443529_complete_b017867c",
+      "taskId": "P1.M2.T2.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/bugfix/001_8022a49f0aff/prps/P1_M2_T2_S1.md",
+        "stage": "complete",
+        "coderResponse": "All levels pass. Let me verify the final validation checklist:\n\n**Level 1**: `npx tsc --noEmit` — ✅ clean (zero errors, exit 0)\n\n**Level 2**: `npx vitest run test/pipeline.test.ts -t \"protectedOk\"` — ✅ 16 passed (all existing first:user tests + updated test + 4 new tests a–d)\n\n**Level 3**: `npx vitest run` — ✅ 699 passed, 0 failed across 24 test files (including `edge-cases.test.ts` E3 block and `filter.test.ts` unaffected)\n\n**Level 4** (Manual reasoning): The BUG-003 repro — messages `[user(\"u0\"), user(\"u1 LATEST\"), asst(\"work\")]`, remove=[1] → `protectedOk` now returns `false` (test (a) encodes this exact scenario) → filterPipeline skips the rewind → latest user message survives.\n\nAll success criteria verified:\n- ✅ (a) checkpoint-style remove containing iLatestUser → false\n- ✅ (b) remove NOT containing iLatestUser → true\n- ✅ (c) config omitting latest:user → not enforced (true)\n- ✅ (d) single-user iFirstUser===iLatestUser + remove contains it → false\n- ✅ protectLatestUser defaults true when protectedRoles absent/empty/malformed (fail-safe)\n- ✅ All existing first:user tests stay green\n- ✅ protectedOk NEVER throws (E13), no new imports, transforms.ts stays Pi-free\n- ✅ Only `src/transforms.ts` and `test/pipeline.test.ts` were modified\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected).\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "P1.M2.T2.S1 fully implemented and validated. The protectedOk function in src/transforms.ts already contains the latest:user enforcement branch (refactored per-selector fall-through, independent protectFirstUser/protectLatestUser booleans, fail-safe defaults). The test file pipeline.test.ts already has the 4 contract tests (a–d) and the updated existing test with a two-user fixture. All 4 validation gates pass: tsc clean, 16/16 protectedOk tests green, 699/699 full-suite tests green (including edge-cases.test.ts E3 block and filter.test.ts unaffected)."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run test/pipeline.test.ts -t \"protectedOk\"",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ✓ test/pipeline.test.ts  (47 tests | 31 skipped) 3ms\n\n Test Files  1 passed (1)\n      Tests  16 passed | 31 skipped (47)\n   Start at  09:54:00\n   Duration  397ms (transform 60ms, setup 0ms, collect 56ms, tests 3ms, environment 0ms, prepare 186ms)\n\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/notes.test.ts  (71 tests) 18ms\n ✓ test/runtime.test.ts  (17 tests) 18ms\n ✓ test/pipeline.test.ts  (47 tests) 47ms\n ✓ test/ledger.test.ts  (39 tests) 18ms\n ✓ test/config.test.ts  (24 tests) 15ms\n ✓ test/settingsLoader.test.ts  (19 tests) 17ms\n ✓ test/drift_nudge.test.ts  (9 tests) 11ms\n ✓ test/nudges.test.ts  (26 tests) 8ms\n ✓ test/filter.test.ts  (17 tests) 12ms\n ✓ test/turn_metric.test.ts  (17 tests) 15ms\n ✓ test/transforms.test.ts  (130 tests) 29ms\n ✓ test/markers.test.ts  (44 tests) 23ms\n ✓ test/log.test.ts  (15 tests) 31ms\n ✓ test/tokens.test.ts  (51 tests) 52ms\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 11ms\n ✓ test/tools/shrink.test.ts  (23 tests) 10ms\n ✓ test/tools/rewind.test.ts  (36 tests) 19ms\n ✓ test/edge-cases.test.ts  (35 tests) 26ms\n ✓ test/integration/disabled-config.test.ts  (1 test) 858ms\n ✓ test/branch-isolation.test.ts  (4 tests) 22ms\n ✓ test/tools/audit.test.ts  (45 tests) 48ms\n ✓ test/index.test.ts  (6 tests) 1036ms\n\n Test Files  23 passed | 1 skipped (24)\n      Tests  699 passed | 2 skipped (701)\n   Start at  09:54:01\n   Duration  1.66s (transform 2.60s, setup 0ms, collect 9.53s, tests 2.35s, environment 5ms, prepare 3.24s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T13:54:03.529Z"
+      },
+      "createdAt": "2026-08-11T13:54:03.529Z"
     }
   ],
-  "lastModified": "2026-08-11T10:48:05.588Z"
+  "lastModified": "2026-08-11T13:54:03.529Z"
 }
