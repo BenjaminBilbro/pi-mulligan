@@ -8,7 +8,11 @@
       "./src/index.ts"
     ]
   },
-  "dependencies": {
+  "keywords": [
+    "pi-package"
+  ],
+  "dependencies": {},
+  "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },

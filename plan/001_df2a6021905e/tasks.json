@@ -4,7 +4,7 @@
       "id": "P1",
       "type": "Phase",
       "title": "pi-mulligan v1.0 — Autonomous Agent Context Control",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Ship the complete pi-mulligan Pi extension as specified: one mechanism (persisted markers driving a context-event view transform), four agent-callable tools (rewind, shrink, checkpoint, audit), and two zero-extra-request nudges (bloated-result reminder + per-turn drift). The agent gains autonomous, token-cheap control over its own context window. Feasibility is pre-proven (spec/02 spike) and a complete reference implementation exists in the sibling main worktree as a read-only oracle (see architecture/system_context.md §3). v1 is a single cohesive MVP; build order mirrors spec/11.",
       "milestones": [
         {
@@ -415,7 +415,7 @@
           "id": "P1.M5",
           "type": "Milestone",
           "title": "Wiring, Edge-Case Pass & Verification (Definition of Done)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Wire everything in index.ts, run the full E1–E20 edge-case checklist, build the integration smoke harness (9 F-* scenarios against real `pi -p`), and finalize changeset-level documentation (Mode B). Definition of Done (spec/11 §3): all Tier-1 unit tests green incl. pairing property; all F-* integration scenarios green; mulligan:nudge provably never persisted; config.enabled=false = pure no-op; an intentional filter exception does not break a turn; README documents install/tools/config/soft-delete guarantee.",
           "tasks": [
             {
@@ -491,14 +491,14 @@
               "id": "P1.M5.T4",
               "type": "Task",
               "title": "Changeset-level documentation (Mode B) + packaging",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Whole-feature/overview documentation that only makes sense once the change lands (Mode B per SOW §5): README (install, configure, the 4 tools, the soft-delete/visible-in-/tree guarantee, known limitations), confirm zero-config works, and optionally package as a pi package (docs/packages.md).",
               "subtasks": [
                 {
                   "id": "P1.M5.T4.S1",
                   "type": "Subtask",
                   "title": "README (install/config/usage/guarantees) + zero-config confirmation + optional pi packaging",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M5.T3.S1"

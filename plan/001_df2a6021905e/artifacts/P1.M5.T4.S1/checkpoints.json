@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "checkpoints": [
+    {
+      "id": "P1.M5.T4.S1_1786433797380_pre-execution_d26473e3",
+      "taskId": "P1.M5.T4.S1",
+      "label": "Before Coder Agent execution",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T4_S1.md",
+        "stage": "pre-execution",
+        "validationResults": [],
+        "timestamp": "2026-08-11T07:36:37.380Z"
+      },
+      "createdAt": "2026-08-11T07:36:37.380Z"
+    },
+    {
+      "id": "P1.M5.T4.S1_1786433942149_coder-response_2d7b2d63",
+      "taskId": "P1.M5.T4.S1",
+      "label": "After Coder Agent response",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T4_S1.md",
+        "stage": "coder-response",
+        "coderResponse": "That's the 12 knob rows plus 4 category header rows — correct.\n\nHere's the final result:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants."
+        },
+        "validationResults": [],
+        "timestamp": "2026-08-11T07:39:02.149Z"
+      },
+      "createdAt": "2026-08-11T07:39:02.149Z"
+    },
+    {
+      "id": "P1.M5.T4.S1_1786433953799_validation-gate-4_955367a0",
+      "taskId": "P1.M5.T4.S1",
+      "label": "After validation gate 4",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T4_S1.md",
+        "stage": "validation-gate-4",
+        "coderResponse": "That's the 12 knob rows plus 4 category header rows — correct.\n\nHere's the final result:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "grep -q 'mulligan_rewind' README.md",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/notes.test.ts  (71 tests) 27ms\n ✓ test/ledger.test.ts  (39 tests) 17ms\n ✓ test/runtime.test.ts  (17 tests) 20ms\n ✓ test/nudges.test.ts  (26 tests) 10ms\n ✓ test/config.test.ts  (24 tests) 18ms\n ✓ test/markers.test.ts  (42 tests) 21ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/transforms.test.ts  (118 tests) 46ms\n ✓ test/drift_nudge.test.ts  (9 tests) 8ms\n ✓ test/pipeline.test.ts  (33 tests) 52ms\n ✓ test/turn_metric.test.ts  (17 tests) 14ms\n ✓ test/log.test.ts  (15 tests) 39ms\n ✓ test/tokens.test.ts  (51 tests) 52ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 18ms\n ✓ test/edge-cases.test.ts  (35 tests) 21ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/shrink.test.ts  (23 tests) 20ms\n ✓ test/index.test.ts  (6 tests) 856ms\n\n Test Files  20 passed | 1 skipped (21)\n      Tests  635 passed | 2 skipped (637)\n   Start at  03:39:05\n   Duration  1.42s (transform 1.73s, setup 0ms, collect 7.05s, tests 1.28s, environment 4ms, prepare 3.21s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -ne -e ./src/index.ts -p \"Reply with exactly: OK\"",
+            "stdout": "OK\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T07:39:13.799Z"
+      },
+      "createdAt": "2026-08-11T07:39:13.799Z"
+    },
+    {
+      "id": "P1.M5.T4.S1_1786433953800_complete_494a632f",
+      "taskId": "P1.M5.T4.S1",
+      "label": "Task completed successfully",
+      "state": {
+        "prpPath": "/home/dustin/projects/pi-mulligan-hack/plan/001_df2a6021905e/prps/P1_M5_T4_S1.md",
+        "stage": "complete",
+        "coderResponse": "That's the 12 knob rows plus 4 category header rows — correct.\n\nHere's the final result:\n\n```json\n{\n   \"result\": \"success\",\n   \"message\": \"README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants.\"\n}\n```",
+        "coderResult": {
+          "result": "success",
+          "message": "README.md created at repo root with all v1 content (4 tools, 12 knobs, 2 nudges). package.json polished with pi-package keyword + peerDependencies. All validation gates pass: tsc --noEmit exit 0, 635 tests green, zero-config load test exit 0, no src/test/spec modifications, no post-spec content (no mulligan_cancel, no 20 knobs, no windowed drift nudge). Verbatim tool descriptions confirmed matching src/tools/*.ts _DESC constants."
+        },
+        "validationResults": [
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "npx tsc --noEmit",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 1,
+            "description": "Level 1 gate",
+            "success": true,
+            "command": "grep -q 'mulligan_rewind' README.md",
+            "stdout": "",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 2,
+            "description": "Level 2 gate",
+            "success": true,
+            "command": "npx vitest run",
+            "stdout": "\n RUN  v1.6.1 /home/dustin/projects/pi-mulligan-hack\n\n ↓ test/integration/edge-cases.integration.test.ts  (2 tests | 2 skipped)\n ✓ test/integration/load.test.ts  (1 test) 2ms\n ✓ test/notes.test.ts  (71 tests) 27ms\n ✓ test/ledger.test.ts  (39 tests) 17ms\n ✓ test/runtime.test.ts  (17 tests) 20ms\n ✓ test/nudges.test.ts  (26 tests) 10ms\n ✓ test/config.test.ts  (24 tests) 18ms\n ✓ test/markers.test.ts  (42 tests) 21ms\n ✓ test/filter.test.ts  (17 tests) 11ms\n ✓ test/transforms.test.ts  (118 tests) 46ms\n ✓ test/drift_nudge.test.ts  (9 tests) 8ms\n ✓ test/pipeline.test.ts  (33 tests) 52ms\n ✓ test/turn_metric.test.ts  (17 tests) 14ms\n ✓ test/log.test.ts  (15 tests) 39ms\n ✓ test/tokens.test.ts  (51 tests) 52ms\n ✓ test/tools/rewind.test.ts  (29 tests) 15ms\n ✓ test/tools/checkpoint.test.ts  (22 tests) 18ms\n ✓ test/edge-cases.test.ts  (35 tests) 21ms\n ✓ test/tools/audit.test.ts  (40 tests) 16ms\n ✓ test/tools/shrink.test.ts  (23 tests) 20ms\n ✓ test/index.test.ts  (6 tests) 856ms\n\n Test Files  20 passed | 1 skipped (21)\n      Tests  635 passed | 2 skipped (637)\n   Start at  03:39:05\n   Duration  1.42s (transform 1.73s, setup 0ms, collect 7.05s, tests 1.28s, environment 4ms, prepare 3.21s)\n\n",
+            "stderr": "stderr | test/config.test.ts > validateConfig > validates numbers: finite, thresholds >0; rejects strings/NaN/Infinity\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-1, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=0, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=null, using default\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=\"8192\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=-1, using default\n\nstderr | test/config.test.ts > validateConfig > filters protectedRoles to known selectors; drops unknown entries; non-array → default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"bogus\", using default\n[mulligan] config: invalid \"rewind.protectedRoles entry\"=\"nope\", using default\n[mulligan] config: invalid \"rewind.protectedRoles\"=\"first:user\", using default\n\nstderr | test/config.test.ts > validateConfig > validates estimateConfidence enum; else default 'medium'\n[mulligan] config: invalid \"audit.estimateConfidence\"=\"bogus\", using default\n[mulligan] config: invalid \"audit.estimateConfidence\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > validates log.file: null is valid 'off'; any string accepted; non-string → null\n[mulligan] config: invalid \"log.file\"=123, using default\n\nstderr | test/config.test.ts > validateConfig > NEVER throws on adversarial input\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n[mulligan] config: invalid \"rewind.maxDepth\"=\"not-a-number\", using default\n\nstderr | test/config.test.ts > getConfig / setConfig cache > setConfig validates/coerces through the cache (invalid → default)\n[mulligan] config: invalid \"nudges.bloatThresholdBytes\"=-5, using default\n\n",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 3,
+            "description": "Level 3 gate",
+            "success": true,
+            "command": "pi -ne -e ./src/index.ts -p \"Reply with exactly: OK\"",
+            "stdout": "OK\n",
+            "stderr": "",
+            "exitCode": 0,
+            "skipped": false,
+            "timedOut": false
+          },
+          {
+            "level": 4,
+            "description": "Level 4 gate",
+            "success": true,
+            "command": null,
+            "stdout": "",
+            "stderr": "",
+            "exitCode": null,
+            "skipped": true,
+            "timedOut": false
+          }
+        ],
+        "timestamp": "2026-08-11T07:39:13.800Z"
+      },
+      "createdAt": "2026-08-11T07:39:13.800Z"
+    }
+  ],
+  "lastModified": "2026-08-11T07:39:13.800Z"
+}
