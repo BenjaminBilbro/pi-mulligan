@@ -18,7 +18,7 @@
               "id": "P1.M1.T1",
               "type": "Task",
               "title": "BUG-001 — to_previous_prompt last_turn must actually hide the latest user (2+ users)",
-              "status": "Planned",
+              "status": "Complete",
               "description": "The resolver (resolveLastTurn) already correctly computes the nuclear removal set including iLastUser for the 2+-user case (transforms.test.ts:566 proves remove===[3,4,5]). The filter undoes it: protectedOk() unconditionally protects the latest user with no awareness of to_previous_prompt. Fix: give protectedOk a to_previous_prompt exemption (skip protectLatestUser when the marker explicitly opted in), thread rw.options.to_previous_prompt from filterPipeline, and prove end-to-end via a content-asserting pipeline regression test. Single-user nuclear stays refused by the resolver (iFirstUser===iLastUser) — unaffected.",
               "subtasks": [
                 {
@@ -35,7 +35,7 @@
                   "id": "P1.M1.T1.S2",
                   "type": "Subtask",
                   "title": "Regression test: to_previous_prompt 2+-user last_turn HIDES the latest user + tail (content assertion)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"
