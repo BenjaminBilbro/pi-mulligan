@@ -447,8 +447,9 @@ describe("E5 — side-effect span → mutation warning appended (spec/08 E5)", (
   it("hidden span with writes/bash → success text contains the VERBATIM MUTATION_WARNING", async () => {
     const { appended, pi } = makePi();
     const callId = "mut-1";
-    const ctxEntries = [
-      msgEntry(user("hi")),
+    const branch = [
+      msgEntry({ role: "toolResult", toolCallId: "b1", content: [{ type: "text", text: "ok" }] }),
+      msgEntry({ role: "toolResult", toolCallId: "w1", content: [{ type: "text", text: "ok" }] }),
       msgEntry({
         role: "assistant",
         content: [
@@ -456,10 +457,9 @@ describe("E5 — side-effect span → mutation warning appended (spec/08 E5)", (
           { type: "toolCall", id: "b1", name: "bash", arguments: { command: "rm -rf /tmp/scratch" } },
         ],
       }),
-      msgEntry({ role: "toolResult", toolCallId: "w1", content: [{ type: "text", text: "ok" }] }),
-      msgEntry({ role: "toolResult", toolCallId: "b1", content: [{ type: "text", text: "ok" }] }),
+      msgEntry(user("hi")),
     ];
-    const ctx = makeCtx({ contextEntries: ctxEntries });
+    const ctx = makeCtx({ branch });
     const tool = makeRewindTool(pi);
     const result = await tool.execute(callId, {
       note: VALID_NOTE, granularity: "last_tool_call_group",
@@ -871,12 +871,12 @@ describe("E20 — appendEntry→sendMessage land in call order (spec/08 E20)", (
   it("makeRewindTool: fakePi.appended[0] is mulligan:rewind AND fakePi.sent[0] is mulligan:note (marker first, note second)", async () => {
     const { appended, sent, pi } = makePi();
     const callId = "tc-rewind";
-    const ctxEntries = [
-      msgEntry(user("hi")),
-      msgEntry(asst("tc-1")),
+    const branch = [
       msgEntry({ role: "toolResult", toolCallId: "tc-1", content: [{ type: "text", text: "..." }] }),
+      msgEntry(asst("tc-1")),
+      msgEntry(user("hi")),
     ];
-    const ctx = makeCtx({ contextEntries: ctxEntries });
+    const ctx = makeCtx({ branch });
     const tool = makeRewindTool(pi);
     await tool.execute(callId, {
       note: VALID_NOTE, granularity: "last_tool_call_group",

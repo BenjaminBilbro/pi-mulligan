@@ -21,10 +21,13 @@
  *   read-only preview (snapshot → resolvers → ledger → K), the persisted payload (incl. checkpoint),
  *   the mutation warning, and the success/refusal text.
  * - The tool is WRITE-ONLY w.r.t. the message list: it NEVER receives/transforms `event.messages` (it is not the
- *   context event). It builds a SNAPSHOT via `ctx.sessionManager.buildContextEntries().flatMap(sessionEntryToContextMessages)`
- *   for the ADVISORY ledger + K estimate. If that snapshot/resolution fails, it falls back to an empty ledger +
- *   K=0 + STILL succeeds (the marker spec is what matters; E13/E8 — never let an advisory computation block a
- *   legitimate rewind).
+ *   context event). It builds the message list from
+ *   `ctx.sessionManager.getBranch().slice().reverse()` (ROOT→LEAF — the SAME source filter.ts passes to
+ *   filterPipeline), and in the SAME loop builds a parallel `indexToEntryId` map. After resolving the removal
+ *   set, it captures `hideEntryIds` — the source `SessionEntry.id`s of the messages to hide — as the pinned
+ *   target for S4's filterPipeline resolution (BUG-002 fix, capture side). If the snapshot/resolution fails,
+ *   it falls back to an empty ledger + K=0 + hideEntryIds omitted, and STILL succeeds (the marker spec is
+ *   what matters; E13/E8 — never let an advisory computation block a legitimate rewind).
  * - Shared tool convention (spec/05 "Shared tool conventions"): the execute body is fail-open to text — it NEVER
  *   throws (E13). The whole body is wrapped in ONE try/catch → text result on any exception.
  * - CRITICAL: `toolCallId` is the FIRST execute arg (NOT params). It becomes `excludeToolCallId` on the marker so
@@ -269,30 +272,45 @@ function checkpointExists(ctx: ExtensionContext, name: string): boolean {
 }
 
 /**
- * resolvePreview — the read-only ledger + K preview (step 5; best-effort). Builds a SNAPSHOT via
- * `ctx.sessionManager.buildContextEntries().flatMap(sessionEntryToContextMessages)` (NOT event.messages — the tool
- * is write-only w.r.t. messages), then mirrors filterPipeline's granularity dispatch (spec/06 §12) to resolve the
- * removal set, and feeds it to extractFileLedger. Returns `{ ledger, k }`.
+ * resolvePreview — the read-only ledger + K preview + hideEntryIds capture (step 5; best-effort).
  *
- * The CALLER wraps this in try/catch → { ledger: emptyLedger(), k: 0 } on ANY failure (the ledger is ADVISORY;
- * never let an advisory computation block a legitimate rewind — E13/E8). This helper is therefore NOT itself
- * responsible for catching — it lets exceptions propagate to the single caller try/catch.
+ * Builds a SNAPSHOT via `ctx.sessionManager.getBranch().slice().reverse()` (ROOT→LEAF — the SAME source
+ * and ordering that filter.ts contextHandler passes to filterPipeline, ensuring the inverse-map coherence
+ * with S4's `mapEntryIdsToMessageIndices` walk). Each entry is projected via `sessionEntryToContextMessages`,
+ * and in the SAME loop a parallel `indexToEntryId` array is built — for each yielded message, the source
+ * `SessionEntry.id` is pushed. This `indexToEntryId` is the exact inverse of S4's `mapEntryIdsToMessageIndices`:
+ * `indexToEntryId[i]` equals the entry id whose message position is `i`.
+ *
+ * After the granularity dispatch resolves `remove: number[]`, computes
+ * `hideEntryIds = remove.map(i => indexToEntryId[i]).filter(string+non-empty)` and returns it alongside
+ * `{ ledger, k }` (widened return). The checkpoint branch reuses the same `branchRootToLeaf` array (one
+ * getBranch read, DRY — resolveCheckpoint expects root→leaf branchEntries).
+ *
+ * The CALLER wraps this in try/catch → { ledger: emptyLedger(), k: 0, hideEntryIds: [] } on ANY failure
+ * (the ledger is ADVISORY; never let an advisory computation block a legitimate rewind — E13/E8).
+ * This helper is therefore NOT itself responsible for catching — it lets exceptions propagate.
  *
  * extractFileLedger's `range` is a number[] of MESSAGE INDICES (NOT a [start,end) tuple). The resolver's
  * removal set IS that index list.
- * resolveCheckpoint takes branchEntries DATA (getBranch(), root→leaf), NOT ctx.
  * Module-local.
  */
 function resolvePreview(
   ctx: ExtensionContext,
   params: RewindArgs,
   toolCallId: string,
-): { ledger: FileLedger; k: number } {
-  const entries = ctx.sessionManager.buildContextEntries();
-  // sessionEntryToContextMessages returns Pi's AgentMessage[]; transforms.ts MessageLike is a Pi-free
-  // structural type that TS rejects across the boundary. Cast through unknown at this single boundary
-  // (the established filter.ts idiom — runtime-identical).
-  const messages = entries.flatMap((e) => sessionEntryToContextMessages(e)) as unknown as MessageLike[];
+): { ledger: FileLedger; k: number; hideEntryIds: string[] } {
+  const branchRaw = ctx.sessionManager.getBranch();
+  const branchRootToLeaf: BranchEntry[] = Array.isArray(branchRaw) ? branchRaw.slice().reverse() as BranchEntry[] : [];
+  const messages: MessageLike[] = [];
+  const indexToEntryId: string[] = [];
+  for (const e of branchRootToLeaf) {
+    const id = e && typeof e.id === "string" ? e.id : "";
+    const yielded = sessionEntryToContextMessages(e as unknown as import("@earendil-works/pi-coding-agent").SessionEntry);
+    for (const m of yielded) {
+      messages.push(m as unknown as MessageLike);
+      indexToEntryId.push(id);
+    }
+  }
 
   let remove: number[];
   if (params.granularity === "last_tool_call_group") {
@@ -302,11 +320,13 @@ function resolvePreview(
     remove = resolveLastTurn(messages, { to_previous_prompt: params.to_previous_prompt }, toolCallId).remove;
   } else {
     // checkpoint (existence already verified by the caller; resolveCheckpoint is defensive regardless)
-    const branchEntries = ctx.sessionManager.getBranch() as BranchEntry[];
-    remove = resolveCheckpoint(messages, branchEntries, params.checkpoint ?? "", toolCallId)?.remove ?? [];
+    remove = resolveCheckpoint(messages, branchRootToLeaf, params.checkpoint ?? "", toolCallId)?.remove ?? [];
   }
   const ledger = extractFileLedger(messages, remove);
-  return { ledger, k: remove.length };
+  const hideEntryIds = remove
+    .map((i) => indexToEntryId[i])
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+  return { ledger, k: remove.length, hideEntryIds };
 }
 
 // ── execute (spec/05 §1 behavior; shared tool convention = never throws — E13) ─────
@@ -371,12 +391,14 @@ async function rewindExecute(
     //     K=0 + STILL succeeds (the marker spec is what matters; the ledger is ADVISORY).
     let ledger: FileLedger;
     let k: number;
+    let hideEntryIds: string[];
     try {
-      ({ ledger, k } = resolvePreview(ctx, params, toolCallId));
+      ({ ledger, k, hideEntryIds } = resolvePreview(ctx, params, toolCallId));
     } catch {
       // Snapshot/resolution failure → best-effort: empty ledger + K=0 + STILL proceed (E13/E8).
       ledger = emptyLedger();
       k = 0;
+      hideEntryIds = [];
     }
 
     // (5b) protected-refusal check — spec/08 E3 ("the tool refuses before persisting") + spec/10 §2.1 F-protected
@@ -411,6 +433,7 @@ async function rewindExecute(
       note: params.note,
       ledger,
       checkpoint: params.checkpoint,
+      ...(hideEntryIds.length > 0 ? { hideEntryIds } : {}),
     };
     const markerId = appendRewindMarker(pi, ctx, payload);
     leaveNote(pi, { content: rendered, rewindId: markerId ?? toolCallId });

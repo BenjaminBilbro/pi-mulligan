@@ -89,7 +89,7 @@ function makePi(opts: {
  *   - sessionId (default "s1")
  *   - entries (getEntries — rewind-marker entries for the depth guard + label entries for checkpoint existence)
  *   - branch (getBranch — SessionEntry[] root→leaf for checkpoint resolution)
- *   - contextEntries (buildContextEntries — SessionEntry[] snapshot flattened to messages for the ledger/K preview)
+ *   - branch (getBranch — SessionEntry[] in LEAF→ROOT order; resolvePreview reverses internally)
  *   - labels (a Map keyed by entryId → label, for checkpointExists latest-wins)
  */
 function makeCtx(opts: {
@@ -97,16 +97,15 @@ function makeCtx(opts: {
   leafId?: string | null;
   entries?: unknown[];
   branch?: unknown[];
-  contextEntries?: unknown[];
   /** Override the latest-wins label map that `getLabel(id)` returns. Keys are targetIds; values are label strings. */
   labels?: Map<string, string>;
-  throwOnBuildContext?: boolean;
+  /** When true, getBranch() throws (best-effort / E13/E8 test). */
+  throwOnGetBranch?: boolean;
 } = {}) {
   const sessionId = opts.sessionId ?? "s1";
   const leafId: string | null = opts.leafId === undefined ? "leaf-1" : opts.leafId;
   const entries = opts.entries ?? [];
   const branch = opts.branch ?? [];
-  const contextEntries = opts.contextEntries ?? [];
   const labels = opts.labels ?? new Map<string, string>();
 
   const sessionManager = {
@@ -123,11 +122,11 @@ function makeCtx(opts: {
       return labels.get(id);
     },
     getBranch() {
+      if (opts.throwOnGetBranch) throw new Error("getBranch boom");
       return branch;
     },
     buildContextEntries() {
-      if (opts.throwOnBuildContext) throw new Error("buildContextEntries boom");
-      return contextEntries;
+      return branch.slice().reverse();
     },
   };
   const ctx = { sessionManager };
@@ -339,7 +338,6 @@ describe("mulligan_rewind — refusal: maxDepth (step 4; E4)", () => {
     const { appended, pi } = makePi();
     const { ctx } = makeCtx({
       entries: [rewindEntry(1)],
-      contextEntries: [],
     });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
     expect(firstText(res)).toMatch(/^Mulligan: rewound last_tool_call_group/);
@@ -353,14 +351,15 @@ describe("mulligan_rewind — success: last_tool_call_group", () => {
   it("persists marker + note; text names granularity + K; payload exact", async () => {
     const { appended, sent, pi } = makePi();
     const callId = "tc-rewind";
-    // contextEntries: a user msg, then an assistant(toolCall)+toolResult unit (the "last tool group")
+    // branch: LEAF→ROOT (getBranch's order). resolvePreview reverses internally to ROOT→LEAF.
+    // A user msg, then an assistant(toolCall)+toolResult unit (the "last tool group")
     // Use DIFFERENT ids from callId so excludeToolCallId doesn't skip this group
-    const ctxEntries = [
-      msgEntry(user("hi")),
-      msgEntry(asst("tc-1")),
+    const branch = [
       msgEntry(result("tc-1")),
+      msgEntry(asst("tc-1")),
+      msgEntry(user("hi")),
     ];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
 
     // marker persisted
@@ -411,14 +410,14 @@ describe("mulligan_rewind — success: last_tool_call_group", () => {
     const callId = "tc-99";
     // TWO tool groups: first group (tc-1) should be the one removed (it's the last non-excluded),
     // second group (tc-99 = the rewind's own) excluded by excludeToolCallId
-    const ctxEntries = [
-      msgEntry(user("hi")),
-      msgEntry(asst("tc-1")),
+    const branch = [
+      msgEntry(result("tc-99")), // the rewind's own tool call (same id as excludeToolCallId)
+      msgEntry(asst("tc-99")),
       msgEntry(result("tc-1")),
-      msgEntry(asst("tc-99")), // the rewind's own tool call (same id as excludeToolCallId)
-      msgEntry(result("tc-99")),
+      msgEntry(asst("tc-1")),
+      msgEntry(user("hi")),
     ];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
 
     // K should exclude the rewind's own group → only tc-1 group (2 messages) removed
@@ -437,7 +436,6 @@ describe("mulligan_rewind — success: checkpoint", () => {
       entries: [checkpointLabelEntry("my-cp", "entry-5")],
       labels: new Map([["entry-5", "mulligan:checkpoint:my-cp"]]),
       branch: [],
-      contextEntries: [],
     });
     const res = await run(pi, ctx, {
       note: VALID_NOTE,
@@ -457,10 +455,10 @@ describe("mulligan_rewind — success: checkpoint", () => {
 // ── K=0 honesty (nothing to hide) ────────────────────────────────────────
 
 describe("mulligan_rewind — K=0 honesty", () => {
-  it("contextEntries with NO toolGroup → success with '(nothing matched to hide)'", async () => {
+  it("branch with NO toolGroup → success with '(nothing matched to hide)'", async () => {
     const { appended, pi } = makePi();
-    const ctxEntries = [msgEntry(user("hi"))];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const branch = [msgEntry(user("hi"))];
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     expect(firstText(res)).toContain("(nothing matched to hide)");
@@ -476,8 +474,9 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
     const { appended, pi } = makePi();
     const callId = "mut-1";
     // assistant issues BOTH a write and a bash in ONE message (single toolGroup → both side effects in ledger)
-    const ctxEntries = [
-      msgEntry(user("hi")),
+    const branch = [
+      msgEntry(result("b1")),
+      msgEntry(result("w1")),
       msgEntry({
         role: "assistant",
         content: [
@@ -485,10 +484,9 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
           { type: "toolCall", id: "b1", name: "bash", arguments: { command: "rm -rf /tmp/scratch" } },
         ],
       }),
-      msgEntry(result("w1")),
-      msgEntry(result("b1")),
+      msgEntry(user("hi")),
     ];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
 
     const text = firstText(res);
@@ -502,15 +500,15 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
   it("hidden span with only reads → NO mutation warning", async () => {
     const { pi } = makePi();
     const callId = "read-1";
-    const ctxEntries = [
-      msgEntry(user("hi")),
+    const branch = [
+      msgEntry(result(callId)),
       msgEntry({
         role: "assistant",
         content: [{ type: "toolCall", id: callId, name: "read", arguments: { path: "/tmp/foo.ts" } }],
       }),
-      msgEntry(result(callId)),
+      msgEntry(user("hi")),
     ];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
 
     const text = firstText(res);
@@ -522,12 +520,12 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
     setConfig({ rewind: { requireMutationWarning: false } });
     const { pi } = makePi();
     const callId = "w1";
-    const ctxEntries = [
-      msgEntry(user("hi")),
-      msgEntry(asstWrite("w1", "/tmp/out.txt")),
+    const branch = [
       msgEntry(result("w1")),
+      msgEntry(asstWrite("w1", "/tmp/out.txt")),
+      msgEntry(user("hi")),
     ];
-    const { ctx } = makeCtx({ contextEntries: ctxEntries });
+    const { ctx } = makeCtx({ branch });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
 
     const text = firstText(res);
@@ -538,9 +536,9 @@ describe("mulligan_rewind — mutation warning (spec/08 E5)", () => {
 // ── best-effort (E13/E8 — snapshot/resolution throw → still success) ────────
 
 describe("mulligan_rewind — best-effort (E13/E8)", () => {
-  it("buildContextEntries THROWS → success still returns; empty ledger + k=0; marker STILL persisted", async () => {
+  it("getBranch THROWS → success still returns; empty ledger + k=0; marker STILL persisted", async () => {
     const { appended, pi } = makePi();
-    const { ctx } = makeCtx({ throwOnBuildContext: true });
+    const { ctx } = makeCtx({ throwOnGetBranch: true });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     // success (not a refusal)
@@ -556,7 +554,7 @@ describe("mulligan_rewind — best-effort (E13/E8)", () => {
 describe("mulligan_rewind — never-throws (E13)", () => {
   it("appendRewindMarker THROWS (pi.appendEntry boom) → returns a text result, NO throw escapes", async () => {
     const { appended, sent, pi } = makePi({ throwOnAppend: true });
-    const { ctx } = makeCtx({ contextEntries: [] });
+    const { ctx } = makeCtx();
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     // The marker wrapper is fail-open (catches internally → returns null). The tool should succeed
@@ -569,7 +567,7 @@ describe("mulligan_rewind — never-throws (E13)", () => {
 
   it("leaveNote THROWS (pi.sendMessage boom) → marker persisted, success returned", async () => {
     const { appended, sent, pi } = makePi({ throwOnSendMessage: true });
-    const { ctx } = makeCtx({ contextEntries: [] });
+    const { ctx } = makeCtx();
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     // marker persisted (leaveNote is fail-open, so the note fails silently)
@@ -584,7 +582,7 @@ describe("mulligan_rewind — never-throws (E13)", () => {
 describe("mulligan_rewind — result shape (details on every path)", () => {
   it("success path → details with granularity, k, ledger, markerId", async () => {
     const { pi } = makePi();
-    const { ctx } = makeCtx({ contextEntries: [] });
+    const { ctx } = makeCtx();
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     expect(res.content).toEqual([{ type: "text", text: expect.any(String) }]);
@@ -617,7 +615,7 @@ describe("mulligan_rewind — result shape (details on every path)", () => {
     // If we want a real outer catch hit, we need something that throws outside the inner try/catch.
     // For now, verify the shape contract holds on all normal paths.
     const { pi } = makePi();
-    const { ctx } = makeCtx({ contextEntries: [] });
+    const { ctx } = makeCtx();
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
 
     expect(res.content).toEqual([{ type: "text", text: expect.any(String) }]);
@@ -636,7 +634,7 @@ describe("mulligan_rewind — types", () => {
 
   it("execute returns Promise<AgentToolResult<RewindDetails>>", async () => {
     const { pi } = makePi();
-    const { ctx } = makeCtx({ contextEntries: [] });
+    const { ctx } = makeCtx();
     const tool = makeRewindTool(pi);
     const res = await tool.execute("call-1", { note: VALID_NOTE, granularity: "last_tool_call_group" }, undefined, undefined, ctx);
     expectTypeOf(res).toMatchTypeOf<AgentToolResult<RewindDetails>>();
@@ -648,7 +646,7 @@ describe("mulligan_rewind — types", () => {
 describe("mulligan_rewind — leafId null fallback", () => {
   it("getLeafId returns null → rewindId falls back to toolCallId", async () => {
     const { sent, pi } = makePi();
-    const { ctx } = makeCtx({ leafId: null, contextEntries: [] });
+    const { ctx } = makeCtx({ leafId: null });
     const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, "my-call-id");
 
     // The note should still be sent (leaveNote is fail-open on append failure,
@@ -658,5 +656,50 @@ describe("mulligan_rewind — leafId null fallback", () => {
     // Check that the note was sent (if it was; leaveNote doesn't throw on failure)
     const text = firstText(res);
     expect(text).toMatch(/^Mulligan: rewound/);
+  });
+});
+
+// ── hideEntryIds capture (BUG-002 pin; P1.M2.T1.S3) ──────────────────────
+
+describe("mulligan_rewind — hideEntryIds capture (BUG-002 pin; P1.M2.T1.S3)", () => {
+  it("last_tool_call_group rewind pins hideEntryIds = the resolved toolGroup's entry ids", async () => {
+    const { appended, pi } = makePi();
+    const callId = "tc-rewind";
+    const branch = [
+      { type: "message", id: "e-result", message: result("tc-1") },
+      { type: "message", id: "e-asst", message: asst("tc-1") },
+      { type: "message", id: "e-user", message: user("hi") },
+    ];
+    const { ctx } = makeCtx({ branch });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" }, callId);
+    expect(firstText(res)).toMatch(/^Mulligan: rewound/);
+    const data = appended[0].data as Record<string, unknown>;
+    expect(data.granularity).toBe("last_tool_call_group");
+    expect(res.details.k).toBe(2);
+    expect(Array.isArray(data.hideEntryIds)).toBe(true);
+    expect(data.hideEntryIds).toEqual(expect.arrayContaining(["e-asst", "e-result"]));
+    expect(data.hideEntryIds).not.toContain("e-user");
+    expect(data.hideEntryIds).toHaveLength(2);
+  });
+
+  it("empty remove (no toolGroup) → hideEntryIds is OMITTED (undefined, not []) on the payload", async () => {
+    const { appended, pi } = makePi();
+    const branch = [{ type: "message", id: "e-user", message: user("hi") }];
+    const { ctx } = makeCtx({ branch });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
+    expect(firstText(res)).toContain("(nothing matched to hide)");
+    const data = appended[0].data as Record<string, unknown>;
+    expect(data.hideEntryIds).toBeUndefined();
+  });
+
+  it("getBranch THROWS → tool still succeeds; hideEntryIds omitted; K=0 (E13/E8)", async () => {
+    const { appended, pi } = makePi();
+    const { ctx } = makeCtx({ throwOnGetBranch: true });
+    const res = await run(pi, ctx, { note: VALID_NOTE, granularity: "last_tool_call_group" });
+    expect(firstText(res)).toMatch(/^Mulligan: rewound/);
+    expect(res.details.k).toBe(0);
+    const data = appended[0].data as Record<string, unknown>;
+    expect(data.hideEntryIds).toBeUndefined();
+    expect(appended).toHaveLength(1);
   });
 });

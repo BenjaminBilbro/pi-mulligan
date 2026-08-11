@@ -118,7 +118,7 @@
                   "id": "P1.M2.T1.S3",
                   "type": "Subtask",
                   "title": "Capture hideEntryIds at rewind creation (tools/rewind.ts resolvePreview)",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1"
