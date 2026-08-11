@@ -1062,7 +1062,7 @@ describe("applyRewind — spec/10 §1.4 (gap-closed removal, pairing intact, ide
   });
 
   it("returns MessageLike[]", () => {
-    expectTypeOf(applyRewind([], [])).toEqualTypeOf<MessageLike[]>();
+    expectTypeOf(applyRewind([] as MessageLike[], [])).toEqualTypeOf<MessageLike[]>();
   });
 });
 

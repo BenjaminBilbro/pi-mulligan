@@ -531,3 +531,104 @@ describe("filterPipeline — property/invariant (spec/10 §3)", () => {
     }
   });
 });
+
+// ── filterPipeline — hideEntryIds pin resolution (BUG-002; P1.M2.T1.S4) ──────────────────────────────
+
+describe("filterPipeline — hideEntryIds pin resolution (BUG-002; P1.M2.T1.S4)", () => {
+  /** Content-bearing toolResult for absence/presence assertions. */
+  function resultText(toolCallId: string, text: string): MessageLike {
+    return { role: "toolResult", toolCallId, toolName: "tool", content: [{ type: "text", text }], isError: false };
+  }
+
+  it("single pin removes its target (pin output differs from live output — pin is consumed)", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("cRead"), resultText("cRead", "READ"), asstText("mid"), asst("cOther"), resultText("cOther", "OTHER"),
+    ];
+    const branch: BranchEntry[] = [
+      entry("e-u", "message"), entry("e-r-a", "message"), entry("e-r-r", "message"),
+      entry("e-mid", "message"), entry("e-o-a", "message"), entry("e-o-r", "message"),
+    ];
+    const rwPin = mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-r-a", "e-r-r"] });
+    const rwLive = mkRewind(1, "last_tool_call_group", {});
+    const outPin = filterPipeline(msgs, { rewinds: [rwPin], shrinks: [] }, cfg, branch);
+    const outLive = filterPipeline(msgs, { rewinds: [rwLive], shrinks: [] }, cfg, branch);
+    expect(JSON.stringify(outPin)).not.toContain("READ");
+    expect(JSON.stringify(outPin)).toContain("OTHER");
+    expect(JSON.stringify(outLive)).toContain("READ");
+    expect(JSON.stringify(outLive)).not.toContain("OTHER");
+    expect(JSON.stringify(outPin)).not.toEqual(JSON.stringify(outLive));
+    expectNoOrphans(outPin);
+  });
+
+  it("COMPOSITION — two stacked pins each hide their own target (BUG-002 unit essence; FAILS on literal contract)", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("cA"), resultText("cA", "AAA"), asst("cB"), resultText("cB", "BBB"),
+    ];
+    const branch: BranchEntry[] = [
+      entry("e-u", "message"), entry("e-a-a", "message"), entry("e-a-r", "message"),
+      entry("e-b-a", "message"), entry("e-b-r", "message"),
+    ];
+    const markers: MarkerBundle = {
+      rewinds: [
+        mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-a-a", "e-a-r"] }),
+        mkRewind(2, "last_tool_call_group", { hideEntryIds: ["e-b-a", "e-b-r"] }),
+      ],
+      shrinks: [],
+    };
+    const out = filterPipeline(msgs, markers, cfg, branch);
+    expect(JSON.stringify(out)).not.toContain("AAA");
+    expect(JSON.stringify(out)).not.toContain("BBB");
+    expect(out.map((m) => m.role)).toEqual(["user"]);
+    expectNoOrphans(out);
+  });
+
+  it("pinned entry absent from branch -> no-op (out === msgs, same ref)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("cS"), resultText("cS", "SURVIVE")];
+    const branch: BranchEntry[] = [entry("e-u", "message"), entry("e-s-a", "message"), entry("e-s-r", "message")];
+    const rw = mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-gone-a", "e-gone-r"] });
+    const out = filterPipeline(msgs, { rewinds: [rw], shrinks: [] }, cfg, branch);
+    expect(out).toBe(msgs);
+    expect(JSON.stringify(out)).toContain("SURVIVE");
+  });
+
+  it("protectedOk gates the pin (pin targeting first:user -> refused; out unchanged)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c"), resultText("c", "TOOL")];
+    const branch: BranchEntry[] = [entry("e-u", "message"), entry("e-a", "message"), entry("e-r", "message")];
+    const firstOnly: ProtectedConfig = { rewind: { protectedRoles: ["first:user"] } };
+    const rw = mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-u"] });
+    const out = filterPipeline(msgs, { rewinds: [rw], shrinks: [] }, firstOnly, branch);
+    expect(out).toBe(msgs);
+    expect(out.map((m) => m.role)).toEqual(["user", "assistant", "toolResult"]);
+  });
+
+  it("pin + live interleave (origIdxOfM bookkeeping across mixed removal types)", () => {
+    const msgs: MessageLike[] = [
+      user("u0"), asst("cA"), resultText("cA", "AAA"), asst("cB"), resultText("cB", "BBB"),
+    ];
+    const branch: BranchEntry[] = [
+      entry("e-u", "message"), entry("e-a-a", "message"), entry("e-a-r", "message"),
+      entry("e-b-a", "message"), entry("e-b-r", "message"),
+    ];
+    const markers: MarkerBundle = {
+      rewinds: [
+        mkRewind(1, "last_tool_call_group", { hideEntryIds: ["e-a-a", "e-a-r"] }),
+        mkRewind(2, "last_tool_call_group", {}),
+      ],
+      shrinks: [],
+    };
+    const out = filterPipeline(msgs, markers, cfg, branch);
+    expect(JSON.stringify(out)).not.toContain("AAA");
+    expect(JSON.stringify(out)).not.toContain("BBB");
+    expect(out.map((m) => m.role)).toEqual(["user"]);
+    expectNoOrphans(out);
+  });
+
+  it("backward compat — marker without hideEntryIds uses live resolution (existing behavior)", () => {
+    const msgs: MessageLike[] = [user("u0"), asst("c1"), resultText("c1", "ONE"), asst("c2"), resultText("c2", "TWO")];
+    const rw = mkRewind(1, "last_tool_call_group");
+    const out = filterPipeline(msgs, { rewinds: [rw], shrinks: [] }, cfg);
+    expect(JSON.stringify(out)).toContain("ONE");
+    expect(JSON.stringify(out)).not.toContain("TWO");
+    expectNoOrphans(out);
+  });
+});

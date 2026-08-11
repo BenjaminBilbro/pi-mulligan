@@ -552,8 +552,8 @@ function normalizeEntryIdSet(entryIds: unknown): Set<string> {
  * @param remove ascending message indices to drop (from a resolver); empty/non-array → messages unchanged
  * @returns a NEW array with `remove` indices dropped (gap closed); the SAME array reference when nothing is removed
  */
-export function applyRewind(messages: MessageLike[], remove: number[]): MessageLike[] {
-  if (!Array.isArray(messages)) return [];
+export function applyRewind<T>(messages: T[], remove: number[]): T[] {
+  if (!Array.isArray(messages)) return [] as T[];
   if (!Array.isArray(remove) || remove.length === 0) return messages;
 
   const removeSet = new Set<number>();
@@ -803,17 +803,21 @@ export function protectedOk(
  * filterPipeline — Mulligan's composition core: apply persisted markers to a message list (spec/06 §1/§5/§8/§11/§12;
  * spec/03 §5). The single PURE entry point the context handler (filter.ts, M3) calls.
  *
- * ORDER (FIXED): (1) rewinds oldest-first, each resolving against the CURRENT (already-reduced) array, gated by
- * protectedOk → applyRewind; (2) shrinks oldest-first via applyShrink; (3) return. NO injectNudge (filter.ts's job
- * per external_deps §3.1). NO hideEntryIds/turnHasAdvanced/diag (later fix tasks — CONTRACT is granularity dispatch
- * only). RE-PARTITIONS fresh each rewind iteration.
+ * ORDER (FIXED): (1) rewinds oldest-first; each marker resolves its removal set — from hideEntryIds (the BUG-002 pin)
+ * via mapEntryIdsToMessageIndices against the ORIGINAL messages + origIdxOfM translation when present+non-empty, ELSE
+ * from the live granularity resolver (re-partitioning the CURRENT already-reduced array) — gated by protectedOk →
+ * applyRewind; (2) shrinks oldest-first via applyShrink; (3) return. NO injectNudge (filter.ts's job per external_deps
+ * §3.1). turnHasAdvanced/diag are later fix tasks (NOT in scope). PIN: a marker with non-empty hideEntryIds resolves
+ * to a STABLE target (its pinned entry ids), so a later rewind cannot retarget an earlier one; absent/empty/
+ * unresolvable → live granularity resolution (backward compat) or no-op (already removed). RE-PARTITIONS fresh each
+ * rewind iteration.
  *
  * SAME reference as messages when no marker transforms anything. Never throws (E13). Pure + deterministic.
  *
  * @param messages      the message list; non-array → []
  * @param markers       { rewinds, shrinks }; undefined/non-record → pass-through
  * @param config        the config slice protectedOk reads; undefined → enforce first:user
- * @param branchEntries getBranch() output for checkpoint rewinds (root→leaf); optional
+ * @param branchEntries getBranch() output (root→leaf) for checkpoint rewinds AND hideEntryIds pin resolution; optional
  * @returns the filtered message array; SAME ref when no transform
  */
 export function filterPipeline(
@@ -831,6 +835,10 @@ export function filterPipeline(
   const shrinks: ShrinkMarkerLike[] = Array.isArray(shrinksRaw) ? (shrinksRaw as ShrinkMarkerLike[]) : [];
 
   let m = messages;
+  // Parallel original-index map: origIdxOfM[j] === the original (messages-level) index of m[j].
+  // Used by the hideEntryIds pin arm to translate pinned entry-id resolutions (against ORIGINAL messages)
+  // to current m-indices after prior rewinds have gap-closed m. Maintained in lockstep with m via applyRewind.
+  let origIdxOfM = messages.map((_x, i) => i);
 
   // 1) REWINDS, oldest-first (stableSortBySeq). RE-PARTITION fresh each iteration.
   for (const rw of stableSortBySeq(rewinds)) {
@@ -839,7 +847,23 @@ export function filterPipeline(
     const excludeId = typeof excludeRaw === "string" ? excludeRaw : undefined;
 
     let remove: number[];
-    if (granularity === "last_tool_call_group") {
+    // PIN ARM (BUG-002): when hideEntryIds is present+non-empty, resolve from the pinned entry ids
+    // against the ORIGINAL messages (not reduced m — branchEntries is the full branch and only aligns
+    // with m on the first rewind). Translate to current m-indices via origIdxOfM.
+    const pinnedRaw = readOwn(rw, "hideEntryIds");
+    if (Array.isArray(pinnedRaw) && pinnedRaw.length > 0) {
+      const origIdxs = mapEntryIdsToMessageIndices(
+        messages,
+        Array.isArray(branchEntries) ? branchEntries : [],
+        pinnedRaw,
+      );
+      remove = [];
+      for (const oi of origIdxs) {
+        const curIdx = origIdxOfM.indexOf(oi);
+        if (curIdx >= 0) remove.push(curIdx);
+      }
+      remove.sort((a, b) => a - b);
+    } else if (granularity === "last_tool_call_group") {
       const units = partitionIntoUnits(m); // RE-PARTITION fresh each iteration
       remove = resolveLastToolCallGroup(units, m, excludeId) ?? [];
     } else if (granularity === "last_turn") {
@@ -857,6 +881,7 @@ export function filterPipeline(
     }
 
     if (!protectedOk(m, remove, config)) continue;
+    origIdxOfM = applyRewind(origIdxOfM, remove);
     m = applyRewind(m, remove);
   }
 
