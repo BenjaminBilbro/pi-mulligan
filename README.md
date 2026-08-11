@@ -74,7 +74,7 @@ This is the `spec/11-build-order.md` §2 Step 9 acceptance check: the extension 
 
 ## 3. Configuration
 
-Mulligan reads a `mulligan` object from Pi `settings.json` — the global `~/.pi/agent/settings.json` and/or the project-local `.pi/settings.json` (project-local overrides global). It is loaded lazily on first use, cached for the session, and re-read on `/reload`. See `spec/09-configuration.md` §1.
+Mulligan reads a `mulligan` object from Pi `settings.json` — the global `~/.pi/agent/settings.json` and/or the project-local `.pi/settings.json` (project-local overrides global). The project-local file is read only when the project is trusted (`ctx.isProjectTrusted()`); in an untrusted project only the global settings apply. It is loaded lazily on first use, cached for the session, and re-read on `/reload`. See `spec/09-configuration.md` §1.
 
 > **Zero configuration.** Every option has a safe default. Unknown keys are ignored; type-mismatched values fall back to the default with a `warn`; **validation never throws.** The extension works with an empty or absent `mulligan` block.
 
@@ -260,3 +260,16 @@ The `spec/` directory is the deep-detail reference. Start with `spec/SPEC.md` (t
 - `spec/07-preventive-and-nudges.md` — the two zero-extra-request nudges.
 - `spec/08-edge-cases.md` — edge cases (E7 compaction leak, E14 master switch, E15 markers).
 - `spec/09-configuration.md` — the configuration surface + coercion rules.
+
+---
+
+## Changelog
+
+- **BUG-001** (critical · inert config) — wired a disk-reading `settingsLoader` and call `setConfig` at factory load and on every `session_start`; every documented knob is now honored.
+- **BUG-002** (critical · stacked `last_tool_call_group` rewinds re-exposed hidden content) — each rewind now pins its target entry ids at creation; the filter resolves against the pin, so a later rewind can no longer retarget an earlier one.
+- **BUG-003** (major · `checkpoint` rewind could hide the protected latest user message) — `latest:user` is now enforced (`protectedOk` + a tool-layer guard); a checkpoint rewind that would cross it is refused.
+- **BUG-004** (minor · marker/label reads scanned every branch) — marker/checkpoint reads now use the current branch (`getBranch()`) instead of all branches (`getEntries()`).
+- **BUG-005** (minor · `mulligan_rewind` reported success when the marker failed to persist) — the rewind tool now null-checks the persisted marker id and refuses (with no stray note) when persist failed.
+- **BUG-006** (minor · `/reload` did not re-read config) — `session_start` (which fires on `/reload`) now re-reads settings and calls `setConfig`.
+- **BUG-007** (minor · smoke harness left core scenarios SOFT) — the smoke harness now makes the bloat-hit, drift-nudge, and seed-hiding assertions GATING, and marks the unimplemented `F-retrycap`/`F-abortfraction` scenarios out-of-scope.
+- **BUG-008** (cosmetic · `mulligan_audit` Suggestion was wrong for non-toolResult top messages) — the `mulligan_audit` Suggestion line is now role-aware.

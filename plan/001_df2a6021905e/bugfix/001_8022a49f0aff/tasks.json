@@ -4,7 +4,7 @@
       "id": "P1",
       "type": "Phase",
       "title": "Restore spec compliance — fix the 8 TEST_RESULTS.md defects",
-      "status": "Ready",
+      "status": "Complete",
       "description": "Fix all 8 bugs reported in the TEST_RESULTS.md mini-PRD: 2 critical (BUG-001 inert config, BUG-002 stacked-rewind content reappearance), 1 major (BUG-003 checkpoint latest:user), 5 minor/cosmetic (BUG-004 branch scoping, BUG-005 silent persist failure, BUG-006 /reload, BUG-007 smoke SOFT coverage, BUG-008 audit suggestion). All fixes are surgical to the existing src/ modules; no new features. Baseline is GREEN (635 vitest tests pass). Every subtask implies write-failing-test → implement → pass (implicit TDD); code is not done without tests. Research findings live in plan/001_df2a6021905e/bugfix/001_8022a49f0aff/architecture/ (system_context.md, external_deps.md, design_decisions.md).",
       "milestones": [
         {
@@ -326,21 +326,21 @@
           "id": "P1.M5",
           "type": "Milestone",
           "title": "Changeset-level documentation sync (Mode B)",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Cross-cutting documentation that only makes sense once the whole changeset lands: README §3 (config accuracy — the 'Disabling' and 're-read on /reload' claims are now true), README §6 (audit Suggestion format if quoted), and a short architecture/BUG-fix summary. Per SOW §5, whole-feature/overview docs are a FINAL Mode B task depending on all implementing subtasks.",
           "tasks": [
             {
               "id": "P1.M5.T1",
               "type": "Task",
               "title": "Sync README + changeset summary",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Verify and update README.md so every claim matches the post-fix behavior: §3 config loading/reload/disabling (now true via M1), the audit Suggestion format if §6 quotes it (now role-aware via M3.T3). Add a concise BUG-fix changelog entry. No code changes.",
               "subtasks": [
                 {
                   "id": "P1.M5.T1.S1",
                   "type": "Subtask",
                   "title": "README accuracy pass + BUG-fix summary",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S2",
