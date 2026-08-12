@@ -297,13 +297,6 @@ Pi's ExtensionAPI has no `invokeTool("edit", {...})` method. Revert uses Node's 
 2. Consider bash revert for high-confidence patterns
 3. Consider snapshot persistence to disk
 
-### Phase 2 (Hardening)
-
-1. Add `revertedFiles` to `RewindMarker` for auditability
-2. Add `mulligan_audit` visibility into active snapshots
-3. Add config toggle `revert.enabled` to disable entirely
-4. Consider `edit` fallback: if no snapshot, attempt to reverse edits using `oldText`/`newText`
-
 ---
 
 ## 9. Testing Requirements
